@@ -10,7 +10,7 @@ import { format, isSameDay, subDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-import { Goal, Task, Priority, Category, User, ThemeType } from './types';
+import { Goal, Task, Priority, Category, User, ThemeType, Project, StrategyBlock, StrategyBlockType } from './types';
 import { DashboardHeader } from './components/DashboardHeader';
 import { WeeklyChart } from './components/WeeklyChart';
 import { CategoryChart } from './components/CategoryChart';
@@ -25,21 +25,32 @@ const getSafeStorage = () => {
   }
 };
 
-const getEmptyData = () => ({ goals: [] as Goal[], tasks: [] as Task[], notes: [] as string[] });
+const getEmptyData = () => ({
+  goals: [] as Goal[],
+  tasks: [] as Task[],
+  notes: [] as string[],
+  projects: [] as Project[],
+  blocks: [] as StrategyBlock[]
+});
 
 const loadUserData = async (username: string) => {
   const ref = doc(db, 'users', username);
   const snap = await getDoc(ref);
   if (!snap.exists()) return getEmptyData();
-  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[] }>;
+  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[] }>;
   return {
     goals: Array.isArray(data.goals) ? data.goals : [],
     tasks: Array.isArray(data.tasks) ? data.tasks : [],
-    notes: Array.isArray(data.notes) ? data.notes : []
+    notes: Array.isArray(data.notes) ? data.notes : [],
+    projects: Array.isArray(data.projects) ? data.projects : [],
+    blocks: Array.isArray(data.blocks) ? data.blocks : []
   };
 };
 
-const saveUserData = async (username: string, payload: { goals: Goal[]; tasks: Task[]; notes: string[] }) => {
+const saveUserData = async (
+  username: string,
+  payload: { goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[] }
+) => {
   const ref = doc(db, 'users', username);
   await setDoc(ref, payload, { merge: true });
 };
@@ -90,6 +101,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [goals, setGoals] = useState<Goal[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState<string[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [blocks, setBlocks] = useState<StrategyBlock[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedRef = useRef(false);
   const saveTimerRef = useRef<number | null>(null);
@@ -106,11 +119,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     hasLoadedRef.current = false;
 
     loadUserData(user.username)
-      .then(({ goals, tasks, notes }) => {
+      .then(({ goals, tasks, notes, projects, blocks }) => {
         if (!isMounted) return;
         setGoals(goals);
         setTasks(tasks);
         setNotes(notes);
+        setProjects(projects);
+        setBlocks(blocks);
         hasLoadedRef.current = true;
         setIsLoading(false);
       })
@@ -119,6 +134,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setGoals([]);
         setTasks([]);
         setNotes([]);
+        setProjects([]);
+        setBlocks([]);
         hasLoadedRef.current = true;
         setIsLoading(false);
       });
@@ -133,7 +150,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
-      saveUserData(user.username, { goals, tasks, notes }).catch(() => {
+      saveUserData(user.username, { goals, tasks, notes, projects, blocks }).catch(() => {
         // ignore save errors
       });
     }, 400);
@@ -141,7 +158,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, user.username, isLoading]);
+  }, [goals, tasks, notes, projects, blocks, user.username, isLoading]);
 
   const applyFilters = (items: any[], dateKey: string) => {
     return items.filter(item => {
@@ -174,6 +191,18 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     rate: (goals.length + tasks.length) ? (((goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length) / (goals.length + tasks.length)) * 100).toFixed(0) : "0"
   };
 
+  const isPascoto = user.username === 'pascoto';
+  const companies: Project['company'][] = ['Empório Pascoto', 'Pascoto100k'];
+  const strategyTypes: StrategyBlockType[] = ['vendas', 'financeiro', 'operacional', 'estrategico', 'funil', 'ads', 'lp', 'email', 'checkout'];
+
+  const getCompanyProjects = (company: Project['company']) =>
+    projects.filter(p => p.company === company).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  const getProjectBlocks = (projectId: string) =>
+    blocks
+      .filter(b => b.projectId === projectId)
+      .sort((a, b) => a.order - b.order);
+
   const Sidebar = () => (
     <aside className={`w-72 flex flex-col h-full ${isFem ? 'bg-white border-r border-rose-100' : 'bg-black border-r border-zinc-900'}`}>
       <div className="p-12 text-center">
@@ -189,6 +218,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         <Link to="/checklist" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/checklist' ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
           <ClipboardList className="w-4 h-4" /> Checklist
         </Link>
+        {isPascoto && (
+          <Link to="/strategy" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/strategy' ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
+            <Sparkles className="w-4 h-4" /> Estratégia
+          </Link>
+        )}
       </nav>
       <div className="p-10 border-t border-rose-100">
         <button onClick={onLogout} className={`flex items-center gap-3 text-[10px] font-black uppercase transition-all ${isFem ? 'text-rose-400 hover:text-rose-700' : 'text-zinc-700 hover:text-white'}`}>
@@ -203,7 +237,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       {/* MOBILE HEADER */}
       <div className={`lg:hidden fixed top-0 left-0 right-0 z-50 p-5 border-b flex justify-between items-center backdrop-blur-xl ${isFem ? 'bg-white/80 border-rose-100 text-rose-700' : 'bg-black/80 border-zinc-900 text-white'}`}>
         <button onClick={() => setIsSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
-        <span className="font-black italic uppercase text-[10px] tracking-widest">{location.pathname === '/checklist' ? 'CHECKLIST' : `${isFem ? 'YASMIN' : user.name} FOCO`}</span>
+        <span className="font-black italic uppercase text-[10px] tracking-widest">
+          {location.pathname === '/checklist'
+            ? 'CHECKLIST'
+            : location.pathname === '/strategy'
+              ? 'ESTRATÉGIA'
+              : `${isFem ? 'YASMIN' : user.name} FOCO`}
+        </span>
         <div className="w-6 h-6" />
       </div>
 
@@ -229,11 +269,24 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           {/* HEADER SECTION */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div>
-              <h2 className={`text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>{location.pathname === '/checklist' ? 'Checklist Diário' : 'Painel de Controle'}</h2>
-              <p className={`text-[10px] font-black uppercase tracking-[0.5em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>{location.pathname === '/checklist' ? 'Execução • Registros do Dia' : 'Protocolo Ativo • Sincronizado'}</p>
+              <h2 className={`text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
+                {location.pathname === '/strategy'
+                  ? 'Estratégia Empresarial'
+                  : location.pathname === '/checklist'
+                    ? 'Checklist Diário'
+                    : 'Painel de Controle'}
+              </h2>
+              <p className={`text-[10px] font-black uppercase tracking-[0.5em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
+                {location.pathname === '/strategy'
+                  ? 'Empório Pascoto • Pascoto100k'
+                  : location.pathname === '/checklist'
+                    ? 'Execução • Registros do Dia'
+                    : 'Protocolo Ativo • Sincronizado'}
+              </p>
             </div>
             
             {/* GLOBAL FILTER BAR */}
+            {location.pathname !== '/strategy' && (
             <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-2 rounded-[2.5rem] w-full sm:w-auto ${isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-100' : 'bg-zinc-900 border border-zinc-800'}`}>
               <div className="flex gap-1 p-1">
                 {(['HOJE', 'ONTEM'] as const).map(tab => (
@@ -286,13 +339,175 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 </select>
               </div>
             </div>
+            )}
           </div>
 
           {location.pathname !== '/checklist' && (
             <DashboardHeader {...stats} theme={user.theme} />
           )}
 
-          {location.pathname === '/checklist' ? (
+          {location.pathname === '/strategy' ? (
+            <div className="space-y-12">
+              {!isPascoto ? (
+                <div className={`p-10 rounded-[3rem] text-center text-[10px] font-black uppercase tracking-[0.4em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
+                  Acesso restrito ao Pascoto
+                </div>
+              ) : (
+                <div className="space-y-12">
+                  {companies.map(company => (
+                    <section key={company} className={`space-y-8 p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                        <div>
+                          <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>{company}</h3>
+                          <p className={`text-[10px] font-black uppercase tracking-[0.3em] mt-2 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Funis e Estruturas Estratégicas</p>
+                        </div>
+                        <div className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
+                          Workspace
+                        </div>
+                      </div>
+
+                      <form
+                        onSubmit={e => {
+                          e.preventDefault();
+                          const f = new FormData(e.currentTarget);
+                          const title = (f.get('title') as string)?.trim();
+                          const type = (f.get('type') as 'funil' | 'estrutura') || 'funil';
+                          if (!title) return;
+                          setProjects([
+                            {
+                              id: crypto.randomUUID(),
+                              title,
+                              type,
+                              createdAt: new Date().toISOString(),
+                              company
+                            },
+                            ...projects
+                          ]);
+                          e.currentTarget.reset();
+                        }}
+                        className="flex flex-col lg:flex-row gap-3"
+                      >
+                        <input
+                          name="title"
+                          required
+                          placeholder="Nome do funil ou estrutura"
+                          className={`flex-1 p-4 sm:p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`}
+                        />
+                        <select
+                          name="type"
+                          className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
+                        >
+                          <option value="funil">Funil</option>
+                          <option value="estrutura">Estrutura</option>
+                        </select>
+                        <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
+                          <Plus className="w-6 h-6" />
+                        </button>
+                      </form>
+
+                      <div className="space-y-6">
+                        {getCompanyProjects(company).map(project => (
+                          <div key={project.id} className={`p-8 rounded-[3rem] border ${isFem ? 'bg-rose-50/40 border-rose-100' : 'bg-black border-zinc-800'}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div>
+                                <h4 className={`text-xl font-black uppercase ${isFem ? 'text-rose-800' : 'text-white'}`}>{project.title}</h4>
+                                <span className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>{project.type}</span>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setProjects(projects.filter(p => p.id !== project.id));
+                                  setBlocks(blocks.filter(b => b.projectId !== project.id));
+                                }}
+                                className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                              >
+                                Remover
+                              </button>
+                            </div>
+
+                            <div className="mt-6 space-y-4">
+                              {getProjectBlocks(project.id).map(block => (
+                                <div key={block.id} className={`p-5 rounded-[2rem] border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
+                                  <div className="space-y-2">
+                                    <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>{block.type}</div>
+                                    <div className={`text-sm font-black uppercase ${isFem ? 'text-rose-800' : 'text-white'}`}>{block.title}</div>
+                                    <p className={`text-[10px] uppercase tracking-[0.2em] ${isFem ? 'text-rose-500' : 'text-zinc-500'}`}>{block.description}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => setBlocks(blocks.filter(b => b.id !== block.id))}
+                                    className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                                  >
+                                    Excluir
+                                  </button>
+                                </div>
+                              ))}
+                              {getProjectBlocks(project.id).length === 0 && (
+                                <div className="text-center py-8 opacity-20">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem elementos</p>
+                                </div>
+                              )}
+                            </div>
+
+                            <form
+                              onSubmit={e => {
+                                e.preventDefault();
+                                const f = new FormData(e.currentTarget);
+                                const title = (f.get('title') as string)?.trim();
+                                const description = (f.get('description') as string)?.trim();
+                                const type = (f.get('type') as StrategyBlockType) || 'estrategico';
+                                if (!title) return;
+                                const currentCount = getProjectBlocks(project.id).length;
+                                setBlocks([
+                                  {
+                                    id: crypto.randomUUID(),
+                                    title,
+                                    description: description || 'Sem descrição',
+                                    type,
+                                    order: currentCount + 1,
+                                    projectId: project.id
+                                  },
+                                  ...blocks
+                                ]);
+                                e.currentTarget.reset();
+                              }}
+                              className="mt-6 grid grid-cols-1 lg:grid-cols-[1.2fr,0.8fr,1.4fr,auto] gap-3"
+                            >
+                              <input
+                                name="title"
+                                required
+                                placeholder="Elemento estratégico"
+                                className={`p-4 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-white text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800'}`}
+                              />
+                              <select
+                                name="type"
+                                className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-white text-rose-600 border border-rose-100' : 'bg-black text-zinc-600 border border-zinc-800'}`}
+                              >
+                                {strategyTypes.map(t => (
+                                  <option key={t} value={t}>{t}</option>
+                                ))}
+                              </select>
+                              <input
+                                name="description"
+                                placeholder="Descrição rápida"
+                                className={`p-4 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-white text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800'}`}
+                              />
+                              <button type="submit" className={`p-4 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
+                                <Plus className="w-5 h-5" />
+                              </button>
+                            </form>
+                          </div>
+                        ))}
+                        {getCompanyProjects(company).length === 0 && (
+                          <div className="text-center py-10 opacity-30">
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Nenhum funil/estrutura criado</p>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : location.pathname === '/checklist' ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* --- CHECKLIST METAS --- */}
               <section className={`flex flex-col space-y-8 p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>

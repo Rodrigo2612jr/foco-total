@@ -50,6 +50,7 @@ export interface Project {
   title: string;
   type: ProjectType;
   createdAt: string;
+  company: 'Empório Pascoto' | 'Pascoto100k';
 }
 
 export type ThemeType = 'masculine' | 'feminine';
