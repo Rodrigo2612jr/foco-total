@@ -84,7 +84,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
   };
 
   return (
-    <div className="h-[460px] w-full rounded-[2.5rem] overflow-hidden border border-rose-100 bg-white">
+    <div className="h-[320px] sm:h-[420px] lg:h-[520px] w-full rounded-[2.5rem] overflow-hidden border border-rose-100 bg-white">
       <ReactFlow
         nodes={nodes}
         edges={flowEdges}
