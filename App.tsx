@@ -6,7 +6,7 @@ import {
   Heart, Sparkles, Menu, X, CheckCircle2, Circle, 
   StickyNote, Star, LogOut, Zap, Filter, Calendar as CalendarIcon, Edit3
 } from 'lucide-react';
-import { format, isSameDay, subDays, parseISO } from 'date-fns';
+import { format, isSameDay, subDays, parseISO, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -69,14 +69,15 @@ const ChecklistItem: React.FC<{
   onToggle: () => void; 
   onDelete: () => void;
   onEdit?: () => void;
-}> = ({ title, category, completed, date, theme, onToggle, onDelete, onEdit }) => {
+  isOverdue?: boolean;
+}> = ({ title, category, completed, date, theme, onToggle, onDelete, onEdit, isOverdue }) => {
   const isFem = theme === 'feminine';
   return (
-    <div className={`flex items-center gap-4 p-5 rounded-[2rem] transition-all duration-500 ${
+    <div className={`flex items-center gap-4 p-5 rounded-[2rem] transition-all duration-500 border ${
       completed 
         ? (isFem ? 'bg-rose-100/20 opacity-40 scale-[0.98]' : 'bg-zinc-900/40 opacity-50') 
         : (isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-200/50' : 'bg-zinc-900 border border-zinc-800')
-    }`}>
+    } ${!completed && isOverdue ? (isFem ? 'border-red-400/80' : 'border-red-500/80') : ''}`}>
       <button onClick={onToggle} className={`shrink-0 transition-transform active:scale-75 ${completed ? (isFem ? 'text-rose-600' : 'text-blue-500') : (isFem ? 'text-rose-300' : 'text-zinc-700')}`}>
         {completed ? <CheckCircle2 className="w-7 h-7" /> : <Circle className="w-7 h-7" />}
       </button>
@@ -180,24 +181,26 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     };
   }, [goals, tasks, notes, projects, blocks, edges, user.username, isLoading, canSave]);
 
-  const applyFilters = (items: any[], dateKey: string) => {
+  const applyFilters = (items: any[], dateKey: string, includeOverdue = false) => {
+    const selectedDate = parseISO(filterDate);
     return items.filter(item => {
       const itemDate = parseISO(item[dateKey]);
       const itemCategory = (item.category ?? 'Outros') as Category;
-      const matchesDate = isSameDay(itemDate, parseISO(filterDate));
+      const matchesDate = isSameDay(itemDate, selectedDate);
       const matchesDaily = !!item.isDaily;
+      const matchesOverdue = includeOverdue && !item.completed && isBefore(itemDate, selectedDate);
       const matchesCategory = filterCategory === 'TUDO' || itemCategory === filterCategory;
       const matchesStatus = filterStatus === 'TODOS'
         ? true
         : filterStatus === 'CONCLUIDOS'
           ? item.completed
           : !item.completed;
-      return (matchesDate || matchesDaily) && matchesCategory && matchesStatus;
+      return (matchesDate || matchesDaily || matchesOverdue) && matchesCategory && matchesStatus;
     });
   };
 
-  const currentGoals = useMemo(() => applyFilters(goals, 'date'), [goals, filterDate, filterCategory]);
-  const currentTasks = useMemo(() => applyFilters(tasks, 'scheduledDate'), [tasks, filterDate, filterCategory]);
+  const currentGoals = useMemo(() => applyFilters(goals, 'date'), [goals, filterDate, filterCategory, filterStatus]);
+  const currentTasks = useMemo(() => applyFilters(tasks, 'scheduledDate', true), [tasks, filterDate, filterCategory, filterStatus]);
 
   const handleQuickDateFilter = (type: 'HOJE' | 'ONTEM') => {
     setActiveFilterTab(type);
@@ -718,6 +721,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       completed={t.completed} 
                       date={t.scheduledDate}
                       theme={user.theme}
+                      isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
                       onToggle={() => setTasks(tasks.map(x => x.id === t.id ? {...x, completed: !x.completed} : x))}
                       onDelete={() => setTasks(tasks.filter(x => x.id !== t.id))}
                       onEdit={() => editTask(t)}
@@ -796,9 +800,9 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       Todos os dias
                     </label>
                   </div>
-                  <button type="submit" className={`w-full p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
-                    <Plus className="w-6 h-6" />
-                    <span className="ml-2 text-[10px] font-black uppercase tracking-[0.3em]">Adicionar Meta</span>
+                  <button type="submit" className={`w-full p-3 sm:p-4 rounded-[1.75rem] text-white shadow-lg active:scale-95 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300/60' : 'bg-blue-600'} flex items-center justify-center gap-2`}>
+                    <Plus className="w-4 h-4" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em]">Adicionar Meta</span>
                   </button>
                 </div>
               </form>
@@ -886,9 +890,9 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       Todos os dias
                     </label>
                   </div>
-                  <button type="submit" className={`w-full p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
-                    <Plus className="w-6 h-6" />
-                    <span className="ml-2 text-[10px] font-black uppercase tracking-[0.3em]">Adicionar Tarefa</span>
+                  <button type="submit" className={`w-full p-3 sm:p-4 rounded-[1.75rem] text-white shadow-lg active:scale-95 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300/60' : 'bg-blue-600'} flex items-center justify-center gap-2`}>
+                    <Plus className="w-4 h-4" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.3em]">Adicionar Tarefa</span>
                   </button>
                 </div>
               </form>
@@ -902,6 +906,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     completed={t.completed} 
                     date={t.scheduledDate}
                     theme={user.theme}
+                    isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
                     onToggle={() => setTasks(tasks.map(x => x.id === t.id ? {...x, completed: !x.completed} : x))}
                     onDelete={() => setTasks(tasks.filter(x => x.id !== t.id))}
                     onEdit={() => editTask(t)}
