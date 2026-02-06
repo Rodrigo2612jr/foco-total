@@ -2,13 +2,13 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Target } from 'lucide-react';
-import { Goal, Category } from '../types';
+import { Category } from '../types';
 
 interface Props {
-  tasks: Goal[];
+  items: Array<{ category?: Category }>;
 }
 
-export const CategoryChart: React.FC<Props> = ({ tasks }) => {
+export const CategoryChart: React.FC<Props> = ({ items }) => {
   const isSmall = typeof window !== 'undefined' && window.innerWidth < 640;
   const data = React.useMemo(() => {
     const counts: Record<Category, number> = {
@@ -19,10 +19,10 @@ export const CategoryChart: React.FC<Props> = ({ tasks }) => {
       'Outros': 0
     };
     
-    tasks.forEach(t => {
-      if (t.category && counts[t.category] !== undefined) {
-        counts[t.category]++;
-      } else if (!t.category) {
+    items.forEach(item => {
+      if (item.category && counts[item.category] !== undefined) {
+        counts[item.category]++;
+      } else if (!item.category) {
         counts['Outros']++;
       }
     });
@@ -30,7 +30,7 @@ export const CategoryChart: React.FC<Props> = ({ tasks }) => {
     return Object.entries(counts)
       .filter(([_, value]) => value > 0)
       .map(([name, value]) => ({ name, value }));
-  }, [tasks]);
+  }, [items]);
 
   const COLORS = ['#2563eb', '#10b981', '#06b6d4', '#8b5cf6', '#71717a'];
 

@@ -201,6 +201,35 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     rate: (goals.length + tasks.length) ? (((goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length) / (goals.length + tasks.length)) * 100).toFixed(0) : "0"
   };
 
+  const weeklyStats = useMemo(() => {
+    const days = Array.from({ length: 7 }).map((_, index) => subDays(new Date(), 6 - index));
+    return days.map(day => {
+      const label = format(day, 'EEE', { locale: ptBR }).toUpperCase();
+      let total = 0;
+      let completed = 0;
+
+      goals.forEach(goal => {
+        const goalDate = parseISO(goal.date);
+        const isForDay = isSameDay(goalDate, day) || goal.isDaily;
+        if (!isForDay) return;
+        total += 1;
+        if (goal.completed) completed += 1;
+      });
+
+      tasks.forEach(task => {
+        const taskDate = parseISO(task.scheduledDate);
+        const isForDay = isSameDay(taskDate, day) || task.isDaily;
+        if (!isForDay) return;
+        total += 1;
+        if (task.completed) completed += 1;
+      });
+
+      return { day: label, completed, total };
+    });
+  }, [goals, tasks]);
+
+  const categoryItems = useMemo(() => [...goals, ...tasks], [goals, tasks]);
+
   const isPascoto = user.username === 'pascoto';
   const companies: Project['company'][] = ['Empório Pascoto', 'Pascoto100k'];
   const strategyTypes: StrategyBlockType[] = ['vendas', 'financeiro', 'operacional', 'estrategico', 'funil', 'ads', 'lp', 'email', 'checkout'];
@@ -861,10 +890,10 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           {/* ANALYTICS SECTION */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
             <WeeklyChart 
-              data={[]} 
+              data={weeklyStats}
               title="PERFORMANCE SEMANAL" 
             />
-            <CategoryChart tasks={goals} />
+            <CategoryChart items={categoryItems} />
           </div>
           </>
           )}
