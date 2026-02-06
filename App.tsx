@@ -363,6 +363,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               </section>
             </div>
           ) : (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
             {/* --- DASHBOARD DE METAS --- */}
@@ -549,7 +550,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             />
             <CategoryChart tasks={goals} />
           </div>
-          </div>
+          </>
           )}
 
         </div>
