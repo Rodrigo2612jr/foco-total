@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { HashRouter as Router, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Plus, Trash2, Target, ClipboardList, 
@@ -8,11 +8,13 @@ import {
 } from 'lucide-react';
 import { format, isSameDay, subDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 import { Goal, Task, Priority, Category, User, ThemeType } from './types';
 import { DashboardHeader } from './components/DashboardHeader';
 import { WeeklyChart } from './components/WeeklyChart';
 import { CategoryChart } from './components/CategoryChart';
+import { db } from './services/firebase';
 
 const getSafeStorage = () => {
   if (typeof window === 'undefined') return null;
@@ -23,25 +25,23 @@ const getSafeStorage = () => {
   }
 };
 
-const saveUserData = (userId: string, key: string, data: any) => {
-  const storage = getSafeStorage();
-  if (!storage) return;
-  try {
-    storage.setItem(`foco_v5_${userId}_${key}`, JSON.stringify(data));
-  } catch {
-    // ignore storage write errors
-  }
+const getEmptyData = () => ({ goals: [] as Goal[], tasks: [] as Task[], notes: [] as string[] });
+
+const loadUserData = async (username: string) => {
+  const ref = doc(db, 'users', username);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return getEmptyData();
+  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[] }>;
+  return {
+    goals: Array.isArray(data.goals) ? data.goals : [],
+    tasks: Array.isArray(data.tasks) ? data.tasks : [],
+    notes: Array.isArray(data.notes) ? data.notes : []
+  };
 };
 
-const getUserData = (userId: string, key: string) => {
-  const storage = getSafeStorage();
-  if (!storage) return [];
-  try {
-    const data = storage.getItem(`foco_v5_${userId}_${key}`);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+const saveUserData = async (username: string, payload: { goals: Goal[]; tasks: Task[]; notes: string[] }) => {
+  const ref = doc(db, 'users', username);
+  await setDoc(ref, payload, { merge: true });
 };
 
 // --- SUB-COMPONENTS ---
@@ -87,9 +87,12 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // States
-  const [goals, setGoals] = useState<Goal[]>(() => getUserData(user.username, 'goals'));
-  const [tasks, setTasks] = useState<Task[]>(() => getUserData(user.username, 'tasks'));
-  const [notes, setNotes] = useState<string[]>(() => getUserData(user.username, 'notes'));
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [notes, setNotes] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
+  const saveTimerRef = useRef<number | null>(null);
   
   // Advanced Filter States
   const [filterDate, setFilterDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
@@ -97,10 +100,47 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [activeFilterTab, setActiveFilterTab] = useState<'HOJE' | 'ONTEM' | 'OUTRO'>('HOJE');
 
   useEffect(() => {
-    saveUserData(user.username, 'goals', goals);
-    saveUserData(user.username, 'tasks', tasks);
-    saveUserData(user.username, 'notes', notes);
-  }, [goals, tasks, notes, user.username]);
+    let isMounted = true;
+    setIsLoading(true);
+    hasLoadedRef.current = false;
+
+    loadUserData(user.username)
+      .then(({ goals, tasks, notes }) => {
+        if (!isMounted) return;
+        setGoals(goals);
+        setTasks(tasks);
+        setNotes(notes);
+        hasLoadedRef.current = true;
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setGoals([]);
+        setTasks([]);
+        setNotes([]);
+        hasLoadedRef.current = true;
+        setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user.username]);
+
+  useEffect(() => {
+    if (!hasLoadedRef.current || isLoading) return;
+
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      saveUserData(user.username, { goals, tasks, notes }).catch(() => {
+        // ignore save errors
+      });
+    }, 400);
+
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [goals, tasks, notes, user.username, isLoading]);
 
   const applyFilters = (items: any[], dateKey: string) => {
     return items.filter(item => {
@@ -170,6 +210,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
       <main className="flex-1 p-6 lg:p-16 max-w-7xl mx-auto w-full mt-16 lg:mt-0 overflow-x-hidden">
         <div className="space-y-16 animate-fade-in">
+          {isLoading && (
+            <div className={`px-6 py-4 rounded-3xl text-[10px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
+              Sincronizando dados...
+            </div>
+          )}
           
           {/* HEADER SECTION */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
@@ -421,8 +466,11 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
           <button 
             onClick={() => {
               const u = user.toLowerCase().trim();
-              if(u === 'pascoto') onLogin({ username: 'pascoto', name: 'PASCOTO', theme: 'masculine' });
-              else onLogin({ username: u || 'yasmin', name: user.toUpperCase() || 'YASMIN', theme: 'feminine' });
+              if (u === 'pascoto' || u === 'pascot') {
+                onLogin({ username: 'pascoto', name: 'PASCOTO', theme: 'masculine' });
+              } else {
+                onLogin({ username: u || 'yasmin', name: user.toUpperCase() || 'YASMIN', theme: 'feminine' });
+              }
             }} 
             className="w-full bg-black py-6 rounded-3xl font-black uppercase italic tracking-[0.2em] text-white shadow-2xl hover:bg-zinc-800 active:scale-95 transition-all"
           >
