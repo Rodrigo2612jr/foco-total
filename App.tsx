@@ -96,6 +96,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const isFem = user.theme === 'feminine';
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeCompany, setActiveCompany] = useState<Project['company'] | null>(null);
 
   // States
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -126,6 +127,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setNotes(notes);
         setProjects(projects);
         setBlocks(blocks);
+        setActiveCompany(null);
         hasLoadedRef.current = true;
         setIsLoading(false);
       })
@@ -136,6 +138,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setNotes([]);
         setProjects([]);
         setBlocks([]);
+        setActiveCompany(null);
         hasLoadedRef.current = true;
         setIsLoading(false);
       });
@@ -267,6 +270,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           )}
 
           {/* HEADER SECTION */}
+          {location.pathname !== '/strategy' && (
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div>
               <h2 className={`text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
@@ -341,6 +345,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             </div>
             )}
           </div>
+          )}
 
           {location.pathname !== '/checklist' && (
             <DashboardHeader {...stats} theme={user.theme} />
@@ -353,16 +358,35 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   Acesso restrito ao Pascoto
                 </div>
               ) : (
-                <div className="space-y-12">
-                  {companies.map(company => (
-                    <section key={company} className={`space-y-8 p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                <div className="space-y-10">
+                  {!activeCompany ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      {companies.map(company => (
+                        <button
+                          key={company}
+                          onClick={() => setActiveCompany(company)}
+                          className={`p-12 rounded-[3.5rem] text-left border transition-all hover:-translate-y-1 ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20 text-rose-800' : 'bg-zinc-900/40 border-zinc-800 text-white'}`}
+                        >
+                          <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-60">Acesso</div>
+                          <div className="text-3xl font-black italic uppercase mt-4">{company}</div>
+                          <div className={`text-[9px] font-black uppercase tracking-[0.3em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>Abrir workspace</div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <section className={`space-y-8 p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                         <div>
-                          <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>{company}</h3>
+                          <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>{activeCompany}</h3>
                           <p className={`text-[10px] font-black uppercase tracking-[0.3em] mt-2 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Funis e Estruturas Estratégicas</p>
                         </div>
-                        <div className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
-                          Workspace
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => setActiveCompany(null)}
+                            className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
+                          >
+                            Voltar
+                          </button>
                         </div>
                       </div>
 
@@ -379,7 +403,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                               title,
                               type,
                               createdAt: new Date().toISOString(),
-                              company
+                              company: activeCompany
                             },
                             ...projects
                           ]);
@@ -406,7 +430,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       </form>
 
                       <div className="space-y-6">
-                        {getCompanyProjects(company).map(project => (
+                        {getCompanyProjects(activeCompany).map(project => (
                           <div key={project.id} className={`p-8 rounded-[3rem] border ${isFem ? 'bg-rose-50/40 border-rose-100' : 'bg-black border-zinc-800'}`}>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                               <div>
@@ -496,14 +520,14 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                             </form>
                           </div>
                         ))}
-                        {getCompanyProjects(company).length === 0 && (
+                        {getCompanyProjects(activeCompany).length === 0 && (
                           <div className="text-center py-10 opacity-30">
                             <p className="text-[10px] font-black uppercase tracking-[0.5em]">Nenhum funil/estrutura criado</p>
                           </div>
                         )}
                       </div>
                     </section>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
