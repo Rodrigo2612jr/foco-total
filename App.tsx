@@ -224,7 +224,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             </div>
             
             {/* GLOBAL FILTER BAR */}
-            <div className={`flex flex-col sm:flex-row items-center gap-3 p-2 rounded-[2.5rem] ${isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-100' : 'bg-zinc-900 border border-zinc-800'}`}>
+            <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-2 rounded-[2.5rem] w-full sm:w-auto ${isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-100' : 'bg-zinc-900 border border-zinc-800'}`}>
               <div className="flex gap-1 p-1">
                 {(['HOJE', 'ONTEM'] as const).map(tab => (
                   <button 
@@ -245,7 +245,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     setFilterDate(e.target.value);
                     setActiveFilterTab('OUTRO');
                   }}
-                  className={`bg-transparent text-[10px] font-black uppercase outline-none ${isFem ? 'text-rose-600' : 'text-zinc-400'}`}
+                  className={`bg-transparent text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'text-rose-600' : 'text-zinc-400'}`}
                 />
               </div>
               <div className="flex items-center gap-3 px-4 border-l border-rose-100">
@@ -253,7 +253,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 <select 
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className={`bg-transparent text-[10px] font-black uppercase outline-none cursor-pointer ${isFem ? 'text-rose-600' : 'text-zinc-400'}`}
+                  className={`bg-transparent text-[10px] font-black uppercase outline-none cursor-pointer w-full sm:w-auto ${isFem ? 'text-rose-600' : 'text-zinc-400'}`}
                 >
                   <option value="TUDO">Categorias</option>
                   <option value="Trabalho">Trabalho</option>
@@ -299,20 +299,20 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 e.currentTarget.reset();
               }} className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <input name="title" required placeholder="Definir nova meta..." className={`flex-1 p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
+                  <input name="title" required placeholder="Definir nova meta..." className={`flex-1 p-4 sm:p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
                   <input
                     type="date"
                     name="date"
                     defaultValue={filterDate}
-                    className={`p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
+                    className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
                   />
                   <div className="flex gap-2">
-                    <select name="category" className={`p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
+                    <select name="category" className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
                       <option value="Trabalho">Trabalho</option>
                       <option value="Pessoal">Pessoal</option>
                       <option value="Saúde">Saúde</option>
                     </select>
-                    <button type="submit" className={`p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
+                    <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
                       <Plus className="w-6 h-6" />
                     </button>
                   </div>
@@ -368,15 +368,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 }, ...tasks]);
                 e.currentTarget.reset();
               }} className="space-y-4">
-                <div className="flex gap-3">
-                  <input name="title" required placeholder="O que precisa ser executado?" className={`flex-1 p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input name="title" required placeholder="O que precisa ser executado?" className={`flex-1 p-4 sm:p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
                   <input
                     type="date"
                     name="date"
                     defaultValue={filterDate}
-                    className={`p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
+                    className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
                   />
-                  <button type="submit" className={`p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
+                  <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
                     <Plus className="w-6 h-6" />
                   </button>
                 </div>
