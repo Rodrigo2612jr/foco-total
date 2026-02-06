@@ -23,12 +23,24 @@ interface Props {
 }
 
 export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange }) => {
+  const nodeTypes = useMemo(() => ({
+    strategy: ({ data }: { data: { title: string; type: string; description?: string } }) => (
+      <div className="rounded-2xl border border-rose-100 bg-white px-4 py-3 shadow-sm min-w-[160px]">
+        <div className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-400">{data.type}</div>
+        <div className="text-sm font-black uppercase text-rose-800 mt-1">{data.title}</div>
+        {data.description && (
+          <div className="text-[9px] uppercase tracking-[0.2em] text-rose-500 mt-2">{data.description}</div>
+        )}
+      </div>
+    )
+  }), []);
+
   const nodes = useMemo<Node[]>(() => {
     return blocks.map((block, index) => ({
       id: block.id,
       position: block.position ?? { x: 60 + (index % 3) * 240, y: 60 + Math.floor(index / 3) * 160 },
-      data: { label: block.title },
-      type: 'default'
+      data: { title: block.title, type: block.type, description: block.description },
+      type: 'strategy'
     }));
   }, [blocks]);
 
@@ -72,10 +84,11 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
   };
 
   return (
-    <div className="h-[420px] w-full rounded-[2.5rem] overflow-hidden border border-rose-100 bg-white">
+    <div className="h-[460px] w-full rounded-[2.5rem] overflow-hidden border border-rose-100 bg-white">
       <ReactFlow
         nodes={nodes}
         edges={flowEdges}
+        nodeTypes={nodeTypes}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}

@@ -880,6 +880,25 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
   const [user, setUser] = useState('');
   const [error, setError] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const u = user.toLowerCase().trim();
+    if (!u) {
+      setError('Informe o acesso');
+      return;
+    }
+    if (u === 'pascoto' || u === 'pascot') {
+      onLogin({ username: 'pascoto', name: 'PASCOTO', theme: 'masculine' });
+      return;
+    }
+    if (u === 'yasmin') {
+      onLogin({ username: 'yasmin', name: 'YASMIN', theme: 'feminine' });
+      return;
+    }
+    setError('Acesso inválido');
+  };
+
   return (
     <div className="fixed inset-0 bg-white flex items-center justify-center p-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-zinc-50 via-white to-white"></div>
@@ -894,7 +913,7 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
           </div>
         </div>
         
-        <div className="space-y-5">
+        <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="relative group">
             <input 
               value={user} 
@@ -912,27 +931,12 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
             </div>
           )}
           <button 
-            onClick={() => {
-              const u = user.toLowerCase().trim();
-              if (!u) {
-                setError('Informe o acesso');
-                return;
-              }
-              if (u === 'pascoto' || u === 'pascot') {
-                onLogin({ username: 'pascoto', name: 'PASCOTO', theme: 'masculine' });
-                return;
-              }
-              if (u === 'yasmin') {
-                onLogin({ username: 'yasmin', name: 'YASMIN', theme: 'feminine' });
-                return;
-              }
-              setError('Acesso inválido');
-            }} 
+            type="submit"
             className="w-full bg-black py-6 rounded-3xl font-black uppercase italic tracking-[0.2em] text-white shadow-2xl hover:bg-zinc-800 active:scale-95 transition-all"
           >
             Sincronizar Protocolo
           </button>
-        </div>
+        </form>
         
         <div className="flex justify-center gap-4 opacity-10">
           <Star className="w-4 h-4" />
@@ -945,37 +949,14 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
 };
 
 const App: React.FC = () => {
-  const [user, setUser] = useState<User | null>(() => {
-    const storage = getSafeStorage();
-    if (!storage) return null;
-    try {
-      const saved = storage.getItem('foco_v5_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState<User | null>(null);
 
   const handleLogin = (u: User) => {
     setUser(u);
-    const storage = getSafeStorage();
-    if (!storage) return;
-    try {
-      storage.setItem('foco_v5_user', JSON.stringify(u));
-    } catch {
-      // ignore storage write errors
-    }
   };
 
   const handleLogout = () => {
     setUser(null);
-    const storage = getSafeStorage();
-    if (!storage) return;
-    try {
-      storage.removeItem('foco_v5_user');
-    } catch {
-      // ignore storage write errors
-    }
   };
 
   return (
