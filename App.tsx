@@ -98,6 +98,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [filterDate, setFilterDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [filterCategory, setFilterCategory] = useState<string>('TUDO');
   const [activeFilterTab, setActiveFilterTab] = useState<'HOJE' | 'ONTEM' | 'OUTRO'>('HOJE');
+  const [filterStatus, setFilterStatus] = useState<'TODOS' | 'PENDENTES' | 'CONCLUIDOS'>('TODOS');
 
   useEffect(() => {
     let isMounted = true;
@@ -145,9 +146,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const applyFilters = (items: any[], dateKey: string) => {
     return items.filter(item => {
       const itemDate = parseISO(item[dateKey]);
+      const itemCategory = (item.category ?? 'Outros') as Category;
       const matchesDate = isSameDay(itemDate, parseISO(filterDate));
-      const matchesCategory = filterCategory === 'TUDO' || item.category === filterCategory;
-      return matchesDate && matchesCategory;
+      const matchesCategory = filterCategory === 'TUDO' || itemCategory === filterCategory;
+      const matchesStatus = filterStatus === 'TODOS'
+        ? true
+        : filterStatus === 'CONCLUIDOS'
+          ? item.completed
+          : !item.completed;
+      return matchesDate && matchesCategory && matchesStatus;
     });
   };
 
@@ -179,6 +186,9 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         <Link to="/" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/' ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
           <LayoutDashboard className="w-4 h-4" /> Painel Geral
         </Link>
+        <Link to="/checklist" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/checklist' ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
+          <ClipboardList className="w-4 h-4" /> Checklist
+        </Link>
       </nav>
       <div className="p-10 border-t border-rose-100">
         <button onClick={onLogout} className={`flex items-center gap-3 text-[10px] font-black uppercase transition-all ${isFem ? 'text-rose-400 hover:text-rose-700' : 'text-zinc-700 hover:text-white'}`}>
@@ -193,7 +203,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       {/* MOBILE HEADER */}
       <div className={`lg:hidden fixed top-0 left-0 right-0 z-50 p-5 border-b flex justify-between items-center backdrop-blur-xl ${isFem ? 'bg-white/80 border-rose-100 text-rose-700' : 'bg-black/80 border-zinc-900 text-white'}`}>
         <button onClick={() => setIsSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
-        <span className="font-black italic uppercase text-[10px] tracking-widest">{isFem ? 'YASMIN' : user.name} FOCO</span>
+        <span className="font-black italic uppercase text-[10px] tracking-widest">{location.pathname === '/checklist' ? 'CHECKLIST' : `${isFem ? 'YASMIN' : user.name} FOCO`}</span>
         <div className="w-6 h-6" />
       </div>
 
@@ -215,12 +225,12 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               Sincronizando dados...
             </div>
           )}
-          
+
           {/* HEADER SECTION */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div>
-              <h2 className={`text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>Painel de Controle</h2>
-              <p className={`text-[10px] font-black uppercase tracking-[0.5em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Protocolo Ativo • Sincronizado</p>
+              <h2 className={`text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>{location.pathname === '/checklist' ? 'Checklist Diário' : 'Painel de Controle'}</h2>
+              <p className={`text-[10px] font-black uppercase tracking-[0.5em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>{location.pathname === '/checklist' ? 'Execução • Registros do Dia' : 'Protocolo Ativo • Sincronizado'}</p>
             </div>
             
             {/* GLOBAL FILTER BAR */}
@@ -260,13 +270,99 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   <option value="Pessoal">Pessoal</option>
                   <option value="Saúde">Saúde</option>
                   <option value="Estudos">Estudos</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3 px-4 border-l border-rose-100">
+                <CheckCircle2 className={`w-4 h-4 ${isFem ? 'text-rose-300' : 'text-zinc-600'}`} />
+                <select 
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as 'TODOS' | 'PENDENTES' | 'CONCLUIDOS')}
+                  className={`bg-transparent text-[10px] font-black uppercase outline-none cursor-pointer w-full sm:w-auto ${isFem ? 'text-rose-600' : 'text-zinc-400'}`}
+                >
+                  <option value="TODOS">Status</option>
+                  <option value="PENDENTES">Pendentes</option>
+                  <option value="CONCLUIDOS">Concluídos</option>
                 </select>
               </div>
             </div>
           </div>
 
-          <DashboardHeader {...stats} theme={user.theme} />
+          {location.pathname !== '/checklist' && (
+            <DashboardHeader {...stats} theme={user.theme} />
+          )}
 
+          {location.pathname === '/checklist' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* --- CHECKLIST METAS --- */}
+              <section className={`flex flex-col space-y-8 p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
+                    <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Separadas por filtro</p>
+                  </div>
+                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                    <Target className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  </div>
+                </div>
+
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  {currentGoals.map(g => (
+                    <ChecklistItem 
+                      key={g.id} 
+                      title={g.title} 
+                      category={g.category} 
+                      completed={g.completed} 
+                      date={g.date}
+                      theme={user.theme}
+                      onToggle={() => setGoals(goals.map(x => x.id === g.id ? {...x, completed: !x.completed} : x))}
+                      onDelete={() => setGoals(goals.filter(x => x.id !== g.id))}
+                    />
+                  ))}
+                  {currentGoals.length === 0 && (
+                    <div className="text-center py-20 opacity-20">
+                      <Star className="w-12 h-12 mx-auto mb-4" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem metas no filtro</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* --- CHECKLIST TAREFAS --- */}
+              <section className={`flex flex-col space-y-8 p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Tarefas do Dia</h3>
+                    <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Checklist diário</p>
+                  </div>
+                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                    <ClipboardList className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  </div>
+                </div>
+
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  {currentTasks.map(t => (
+                    <ChecklistItem 
+                      key={t.id} 
+                      title={t.title} 
+                      category={t.category}
+                      completed={t.completed} 
+                      date={t.scheduledDate}
+                      theme={user.theme}
+                      onToggle={() => setTasks(tasks.map(x => x.id === t.id ? {...x, completed: !x.completed} : x))}
+                      onDelete={() => setTasks(tasks.filter(x => x.id !== t.id))}
+                    />
+                  ))}
+                  {currentTasks.length === 0 && (
+                    <div className="text-center py-20 opacity-20">
+                      <ClipboardList className="w-12 h-12 mx-auto mb-4" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem tarefas no filtro</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+          ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             
             {/* --- DASHBOARD DE METAS --- */}
@@ -358,13 +454,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 const f = new FormData(e.currentTarget);
                 const title = f.get('title') as string;
                 const date = (f.get('date') as string) || filterDate;
+                const category = (f.get('category') as Category) || 'Outros';
                 if(!title) return;
                 setTasks([{ 
                   id: crypto.randomUUID(), 
                   title, 
                   completed: false, 
                   scheduledDate: date + 'T12:00:00', 
-                  createdAt: new Date().toISOString() 
+                  createdAt: new Date().toISOString(),
+                  category
                 }, ...tasks]);
                 e.currentTarget.reset();
               }} className="space-y-4">
@@ -376,6 +474,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     defaultValue={filterDate}
                     className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
                   />
+                  <select name="category" defaultValue="Outros" className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
+                    <option value="Trabalho">Trabalho</option>
+                    <option value="Pessoal">Pessoal</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Estudos">Estudos</option>
+                    <option value="Outros">Outros</option>
+                  </select>
                   <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
                     <Plus className="w-6 h-6" />
                   </button>
@@ -387,6 +492,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   <ChecklistItem 
                     key={t.id} 
                     title={t.title} 
+                    category={t.category}
                     completed={t.completed} 
                     date={t.scheduledDate}
                     theme={user.theme}
@@ -443,6 +549,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             />
             <CategoryChart tasks={goals} />
           </div>
+          </div>
+          )}
 
         </div>
       </main>

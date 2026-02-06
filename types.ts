@@ -23,6 +23,7 @@ export interface Task {
   completed: boolean;
   scheduledDate: string; // ISO format
   createdAt: string;
+  category?: Category;
 }
 
 export interface WeeklyStat {
