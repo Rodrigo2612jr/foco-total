@@ -563,6 +563,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
 const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
   const [user, setUser] = useState('');
+  const [error, setError] = useState('');
   return (
     <div className="fixed inset-0 bg-white flex items-center justify-center p-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-zinc-50 via-white to-white"></div>
@@ -581,19 +582,35 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
           <div className="relative group">
             <input 
               value={user} 
-              onChange={e => setUser(e.target.value)} 
+              onChange={e => {
+                setUser(e.target.value);
+                if (error) setError('');
+              }} 
               placeholder="IDENTIFICAÇÃO DO USUÁRIO" 
               className="w-full bg-zinc-50 border border-zinc-100 p-6 rounded-3xl font-black uppercase text-zinc-800 focus:bg-white focus:border-black outline-none transition-all placeholder:text-zinc-300 text-center text-xs tracking-widest" 
             />
           </div>
+          {error && (
+            <div className="text-[10px] font-black uppercase tracking-[0.3em] text-red-500">
+              {error}
+            </div>
+          )}
           <button 
             onClick={() => {
               const u = user.toLowerCase().trim();
+              if (!u) {
+                setError('Informe o acesso');
+                return;
+              }
               if (u === 'pascoto' || u === 'pascot') {
                 onLogin({ username: 'pascoto', name: 'PASCOTO', theme: 'masculine' });
-              } else {
-                onLogin({ username: u || 'yasmin', name: user.toUpperCase() || 'YASMIN', theme: 'feminine' });
+                return;
               }
+              if (u === 'yasmin') {
+                onLogin({ username: 'yasmin', name: 'YASMIN', theme: 'feminine' });
+                return;
+              }
+              setError('Acesso inválido');
             }} 
             className="w-full bg-black py-6 rounded-3xl font-black uppercase italic tracking-[0.2em] text-white shadow-2xl hover:bg-zinc-800 active:scale-95 transition-all"
           >
