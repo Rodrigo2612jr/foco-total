@@ -286,12 +286,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 const f = new FormData(e.currentTarget);
                 const title = f.get('title') as string;
                 const cat = f.get('category') as Category;
+                const date = (f.get('date') as string) || filterDate;
                 if(!title) return;
                 setGoals([{ 
                   id: crypto.randomUUID(), 
                   title, 
                   completed: false, 
-                  date: filterDate + 'T12:00:00', 
+                  date: date + 'T12:00:00', 
                   category: cat, 
                   priority: Priority.MEDIUM 
                 }, ...goals]);
@@ -299,6 +300,12 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               }} className="space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3">
                   <input name="title" required placeholder="Definir nova meta..." className={`flex-1 p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
+                  <input
+                    type="date"
+                    name="date"
+                    defaultValue={filterDate}
+                    className={`p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
+                  />
                   <div className="flex gap-2">
                     <select name="category" className={`p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
                       <option value="Trabalho">Trabalho</option>
@@ -350,18 +357,25 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
                 const title = f.get('title') as string;
+                const date = (f.get('date') as string) || filterDate;
                 if(!title) return;
                 setTasks([{ 
                   id: crypto.randomUUID(), 
                   title, 
                   completed: false, 
-                  scheduledDate: filterDate + 'T12:00:00', 
+                  scheduledDate: date + 'T12:00:00', 
                   createdAt: new Date().toISOString() 
                 }, ...tasks]);
                 e.currentTarget.reset();
               }} className="space-y-4">
                 <div className="flex gap-3">
                   <input name="title" required placeholder="O que precisa ser executado?" className={`flex-1 p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
+                  <input
+                    type="date"
+                    name="date"
+                    defaultValue={filterDate}
+                    className={`p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
+                  />
                   <button type="submit" className={`p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
                     <Plus className="w-6 h-6" />
                   </button>
