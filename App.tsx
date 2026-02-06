@@ -722,28 +722,30 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 }, ...goals]);
                 e.currentTarget.reset();
               }} className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr,auto,auto] gap-3">
                   <input name="title" required placeholder="Definir nova meta..." className={`flex-1 p-4 sm:p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
-                  <input
-                    type="date"
-                    name="date"
-                    defaultValue={filterDate}
-                    className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
-                  />
-                  <label className={`flex items-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
-                    <input type="checkbox" name="daily" className="accent-rose-500" />
-                    Todos os dias
-                  </label>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[auto,auto,auto] gap-2">
                     <select name="category" className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
                       <option value="Trabalho">Trabalho</option>
                       <option value="Pessoal">Pessoal</option>
                       <option value="Saúde">Saúde</option>
+                      <option value="Estudos">Estudos</option>
+                      <option value="Outros">Outros</option>
                     </select>
-                    <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
-                      <Plus className="w-6 h-6" />
-                    </button>
+                    <input
+                      type="date"
+                      name="date"
+                      defaultValue={filterDate}
+                      className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
+                    />
+                    <label className={`flex items-center justify-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
+                      <input type="checkbox" name="daily" className="accent-rose-500" />
+                      Todos os dias
+                    </label>
                   </div>
+                  <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
+                    <Plus className="w-6 h-6" />
+                  </button>
                 </div>
               </form>
 
@@ -808,25 +810,27 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 }, ...tasks]);
                 e.currentTarget.reset();
               }} className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr,auto,auto] gap-3">
                   <input name="title" required placeholder="O que precisa ser executado?" className={`flex-1 p-4 sm:p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`} />
-                  <input
-                    type="date"
-                    name="date"
-                    defaultValue={filterDate}
-                    className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
-                  />
-                  <label className={`flex items-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
-                    <input type="checkbox" name="daily" className="accent-rose-500" />
-                    Todos os dias
-                  </label>
-                  <select name="category" defaultValue="Outros" className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
-                    <option value="Trabalho">Trabalho</option>
-                    <option value="Pessoal">Pessoal</option>
-                    <option value="Saúde">Saúde</option>
-                    <option value="Estudos">Estudos</option>
-                    <option value="Outros">Outros</option>
-                  </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[auto,auto,auto] gap-2">
+                    <select name="category" defaultValue="Outros" className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
+                      <option value="Trabalho">Trabalho</option>
+                      <option value="Pessoal">Pessoal</option>
+                      <option value="Saúde">Saúde</option>
+                      <option value="Estudos">Estudos</option>
+                      <option value="Outros">Outros</option>
+                    </select>
+                    <input
+                      type="date"
+                      name="date"
+                      defaultValue={filterDate}
+                      className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
+                    />
+                    <label className={`flex items-center justify-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
+                      <input type="checkbox" name="daily" className="accent-rose-500" />
+                      Todos os dias
+                    </label>
+                  </div>
                   <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
                     <Plus className="w-6 h-6" />
                   </button>
