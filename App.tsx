@@ -4,7 +4,7 @@ import { HashRouter as Router, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Plus, Trash2, Target, ClipboardList, 
   Heart, Sparkles, Menu, X, CheckCircle2, Circle, 
-  StickyNote, Star, LogOut, Zap, Filter, Calendar as CalendarIcon
+  StickyNote, Star, LogOut, Zap, Filter, Calendar as CalendarIcon, Edit3
 } from 'lucide-react';
 import { format, isSameDay, subDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -67,8 +67,9 @@ const ChecklistItem: React.FC<{
   date: string;
   theme: ThemeType;
   onToggle: () => void; 
-  onDelete: () => void 
-}> = ({ title, category, completed, date, theme, onToggle, onDelete }) => {
+  onDelete: () => void;
+  onEdit?: () => void;
+}> = ({ title, category, completed, date, theme, onToggle, onDelete, onEdit }) => {
   const isFem = theme === 'feminine';
   return (
     <div className={`flex items-center gap-4 p-5 rounded-[2rem] transition-all duration-500 ${
@@ -86,9 +87,16 @@ const ChecklistItem: React.FC<{
           <span className={`text-[8px] font-black uppercase tracking-widest ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>{format(parseISO(date), 'dd MMM', { locale: ptBR })}</span>
         </div>
       </div>
-      <button onClick={onDelete} className={`transition-all hover:scale-110 ${isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-800 hover:text-rose-500'}`}>
-        <Trash2 className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-3">
+        {onEdit && (
+          <button onClick={onEdit} className={`transition-all hover:scale-110 ${isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-800 hover:text-blue-400'}`}>
+            <Edit3 className="w-4 h-4" />
+          </button>
+        )}
+        <button onClick={onDelete} className={`transition-all hover:scale-110 ${isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-800 hover:text-rose-500'}`}>
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -109,6 +117,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [blocks, setBlocks] = useState<StrategyBlock[]>([]);
   const [edges, setEdges] = useState<StrategyEdge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [canSave, setCanSave] = useState(false);
   const hasLoadedRef = useRef(false);
   const saveTimerRef = useRef<number | null>(null);
   
@@ -133,6 +142,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setBlocks(blocks);
         setEdges(edges);
         setActiveCompany(null);
+        setCanSave(true);
         hasLoadedRef.current = true;
         setIsLoading(false);
       })
@@ -145,6 +155,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setBlocks([]);
         setEdges([]);
         setActiveCompany(null);
+        setCanSave(false);
         hasLoadedRef.current = true;
         setIsLoading(false);
       });
@@ -155,7 +166,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   }, [user.username]);
 
   useEffect(() => {
-    if (!hasLoadedRef.current || isLoading) return;
+    if (!hasLoadedRef.current || isLoading || !canSave) return;
 
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
@@ -167,7 +178,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, projects, blocks, edges, user.username, isLoading]);
+  }, [goals, tasks, notes, projects, blocks, edges, user.username, isLoading, canSave]);
 
   const applyFilters = (items: any[], dateKey: string) => {
     return items.filter(item => {
@@ -199,6 +210,46 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     completed: goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length,
     pending: (goals.length + tasks.length) - (goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length),
     rate: (goals.length + tasks.length) ? (((goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length) / (goals.length + tasks.length)) * 100).toFixed(0) : "0"
+  };
+
+  const editGoal = (goal: Goal) => {
+    const title = prompt('Editar meta (título):', goal.title);
+    if (title === null) return;
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
+    const dateInput = prompt('Data (YYYY-MM-DD):', format(parseISO(goal.date), 'yyyy-MM-dd'));
+    if (dateInput === null) return;
+    const categoryInput = prompt('Categoria (Trabalho, Pessoal, Saúde, Estudos, Outros):', goal.category);
+    if (categoryInput === null) return;
+    const isDaily = confirm('Marcar como diário?');
+
+    setGoals(goals.map(g => g.id === goal.id ? {
+      ...g,
+      title: trimmedTitle,
+      date: (dateInput.trim() || format(parseISO(goal.date), 'yyyy-MM-dd')) + 'T12:00:00',
+      category: (categoryInput.trim() as Category) || goal.category,
+      isDaily
+    } : g));
+  };
+
+  const editTask = (task: Task) => {
+    const title = prompt('Editar tarefa (título):', task.title);
+    if (title === null) return;
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
+    const dateInput = prompt('Data (YYYY-MM-DD):', format(parseISO(task.scheduledDate), 'yyyy-MM-dd'));
+    if (dateInput === null) return;
+    const categoryInput = prompt('Categoria (Trabalho, Pessoal, Saúde, Estudos, Outros):', task.category ?? 'Outros');
+    if (categoryInput === null) return;
+    const isDaily = confirm('Marcar como diário?');
+
+    setTasks(tasks.map(t => t.id === task.id ? {
+      ...t,
+      title: trimmedTitle,
+      scheduledDate: (dateInput.trim() || format(parseISO(task.scheduledDate), 'yyyy-MM-dd')) + 'T12:00:00',
+      category: (categoryInput.trim() as Category) || task.category,
+      isDaily
+    } : t));
   };
 
   const weeklyStats = useMemo(() => {
@@ -626,6 +677,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       theme={user.theme}
                       onToggle={() => setGoals(goals.map(x => x.id === g.id ? {...x, completed: !x.completed} : x))}
                       onDelete={() => setGoals(goals.filter(x => x.id !== g.id))}
+                      onEdit={() => editGoal(g)}
                     />
                   ))}
                   {currentGoals.length === 0 && (
@@ -668,6 +720,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       theme={user.theme}
                       onToggle={() => setTasks(tasks.map(x => x.id === t.id ? {...x, completed: !x.completed} : x))}
                       onDelete={() => setTasks(tasks.filter(x => x.id !== t.id))}
+                      onEdit={() => editTask(t)}
                     />
                   ))}
                   {currentTasks.length === 0 && (
@@ -761,6 +814,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     theme={user.theme}
                     onToggle={() => setGoals(goals.map(x => x.id === g.id ? {...x, completed: !x.completed} : x))}
                     onDelete={() => setGoals(goals.filter(x => x.id !== g.id))}
+                    onEdit={() => editGoal(g)}
                   />
                 ))}
                 {currentGoals.length === 0 && (
@@ -850,6 +904,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     theme={user.theme}
                     onToggle={() => setTasks(tasks.map(x => x.id === t.id ? {...x, completed: !x.completed} : x))}
                     onDelete={() => setTasks(tasks.filter(x => x.id !== t.id))}
+                    onEdit={() => editTask(t)}
                   />
                 ))}
                 {currentTasks.length === 0 && (
