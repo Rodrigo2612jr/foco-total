@@ -386,7 +386,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           </div>
           )}
 
-          {location.pathname !== '/checklist' && (
+          {location.pathname !== '/checklist' && location.pathname !== '/strategy' && (
             <DashboardHeader {...stats} theme={user.theme} />
           )}
 
