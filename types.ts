@@ -15,6 +15,7 @@ export interface Goal {
   date: string; // ISO format
   priority: Priority;
   category: Category;
+  isDaily?: boolean;
 }
 
 export interface Task {
@@ -24,6 +25,7 @@ export interface Task {
   scheduledDate: string; // ISO format
   createdAt: string;
   category?: Category;
+  isDaily?: boolean;
 }
 
 export interface WeeklyStat {
@@ -40,6 +42,14 @@ export interface StrategyBlock {
   description: string;
   type: StrategyBlockType;
   order: number;
+  projectId: string;
+  position?: { x: number; y: number };
+}
+
+export interface StrategyEdge {
+  id: string;
+  source: string;
+  target: string;
   projectId: string;
 }
 

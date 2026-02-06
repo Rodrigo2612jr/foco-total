@@ -10,10 +10,11 @@ import { format, isSameDay, subDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-import { Goal, Task, Priority, Category, User, ThemeType, Project, StrategyBlock, StrategyBlockType } from './types';
+import { Goal, Task, Priority, Category, User, ThemeType, Project, StrategyBlock, StrategyBlockType, StrategyEdge } from './types';
 import { DashboardHeader } from './components/DashboardHeader';
 import { WeeklyChart } from './components/WeeklyChart';
 import { CategoryChart } from './components/CategoryChart';
+import { StrategyFlow } from './components/StrategyFlow';
 import { db } from './services/firebase';
 
 const getSafeStorage = () => {
@@ -30,26 +31,28 @@ const getEmptyData = () => ({
   tasks: [] as Task[],
   notes: [] as string[],
   projects: [] as Project[],
-  blocks: [] as StrategyBlock[]
+  blocks: [] as StrategyBlock[],
+  edges: [] as StrategyEdge[]
 });
 
 const loadUserData = async (username: string) => {
   const ref = doc(db, 'users', username);
   const snap = await getDoc(ref);
   if (!snap.exists()) return getEmptyData();
-  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[] }>;
+  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[]; edges: StrategyEdge[] }>;
   return {
     goals: Array.isArray(data.goals) ? data.goals : [],
     tasks: Array.isArray(data.tasks) ? data.tasks : [],
     notes: Array.isArray(data.notes) ? data.notes : [],
     projects: Array.isArray(data.projects) ? data.projects : [],
-    blocks: Array.isArray(data.blocks) ? data.blocks : []
+    blocks: Array.isArray(data.blocks) ? data.blocks : [],
+    edges: Array.isArray(data.edges) ? data.edges : []
   };
 };
 
 const saveUserData = async (
   username: string,
-  payload: { goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[] }
+  payload: { goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[]; edges: StrategyEdge[] }
 ) => {
   const ref = doc(db, 'users', username);
   await setDoc(ref, payload, { merge: true });
@@ -104,6 +107,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [notes, setNotes] = useState<string[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [blocks, setBlocks] = useState<StrategyBlock[]>([]);
+  const [edges, setEdges] = useState<StrategyEdge[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedRef = useRef(false);
   const saveTimerRef = useRef<number | null>(null);
@@ -120,13 +124,14 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     hasLoadedRef.current = false;
 
     loadUserData(user.username)
-      .then(({ goals, tasks, notes, projects, blocks }) => {
+      .then(({ goals, tasks, notes, projects, blocks, edges }) => {
         if (!isMounted) return;
         setGoals(goals);
         setTasks(tasks);
         setNotes(notes);
         setProjects(projects);
         setBlocks(blocks);
+        setEdges(edges);
         setActiveCompany(null);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -138,6 +143,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setNotes([]);
         setProjects([]);
         setBlocks([]);
+        setEdges([]);
         setActiveCompany(null);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -153,7 +159,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
-      saveUserData(user.username, { goals, tasks, notes, projects, blocks }).catch(() => {
+      saveUserData(user.username, { goals, tasks, notes, projects, blocks, edges }).catch(() => {
         // ignore save errors
       });
     }, 400);
@@ -161,20 +167,21 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, projects, blocks, user.username, isLoading]);
+  }, [goals, tasks, notes, projects, blocks, edges, user.username, isLoading]);
 
   const applyFilters = (items: any[], dateKey: string) => {
     return items.filter(item => {
       const itemDate = parseISO(item[dateKey]);
       const itemCategory = (item.category ?? 'Outros') as Category;
       const matchesDate = isSameDay(itemDate, parseISO(filterDate));
+      const matchesDaily = !!item.isDaily;
       const matchesCategory = filterCategory === 'TUDO' || itemCategory === filterCategory;
       const matchesStatus = filterStatus === 'TODOS'
         ? true
         : filterStatus === 'CONCLUIDOS'
           ? item.completed
           : !item.completed;
-      return matchesDate && matchesCategory && matchesStatus;
+      return (matchesDate || matchesDaily) && matchesCategory && matchesStatus;
     });
   };
 
@@ -205,6 +212,9 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     blocks
       .filter(b => b.projectId === projectId)
       .sort((a, b) => a.order - b.order);
+
+  const getProjectEdges = (projectId: string) =>
+    edges.filter(e => e.projectId === projectId);
 
   const Sidebar = () => (
     <aside className={`w-72 flex flex-col h-full ${isFem ? 'bg-white border-r border-rose-100' : 'bg-black border-r border-zinc-900'}`}>
@@ -441,11 +451,31 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                 onClick={() => {
                                   setProjects(projects.filter(p => p.id !== project.id));
                                   setBlocks(blocks.filter(b => b.projectId !== project.id));
+                                  setEdges(edges.filter(e => e.projectId !== project.id));
                                 }}
                                 className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
                               >
                                 Remover
                               </button>
+                            </div>
+
+                            <div className="mt-6">
+                              <StrategyFlow
+                                blocks={getProjectBlocks(project.id)}
+                                edges={getProjectEdges(project.id)}
+                                onBlocksChange={(updatedBlocks) => {
+                                  setBlocks([
+                                    ...blocks.filter(b => b.projectId !== project.id),
+                                    ...updatedBlocks
+                                  ]);
+                                }}
+                                onEdgesChange={(updatedEdges) => {
+                                  setEdges([
+                                    ...edges.filter(e => e.projectId !== project.id),
+                                    ...updatedEdges.map(e => ({ ...e, projectId: project.id }))
+                                  ]);
+                                }}
+                              />
                             </div>
 
                             <div className="mt-6 space-y-4">
@@ -457,7 +487,10 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                     <p className={`text-[10px] uppercase tracking-[0.2em] ${isFem ? 'text-rose-500' : 'text-zinc-500'}`}>{block.description}</p>
                                   </div>
                                   <button
-                                    onClick={() => setBlocks(blocks.filter(b => b.id !== block.id))}
+                                    onClick={() => {
+                                      setBlocks(blocks.filter(b => b.id !== block.id));
+                                      setEdges(edges.filter(e => e.source !== block.id && e.target !== block.id));
+                                    }}
                                     className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
                                   >
                                     Excluir
@@ -540,8 +573,16 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
                     <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Separadas por filtro</p>
                   </div>
-                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
-                    <Target className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setGoals(goals.filter(g => !g.isDaily))}
+                      className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                    >
+                      Remover diários
+                    </button>
+                    <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                      <Target className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                    </div>
                   </div>
                 </div>
 
@@ -574,8 +615,16 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Tarefas do Dia</h3>
                     <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Checklist diário</p>
                   </div>
-                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
-                    <ClipboardList className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setTasks(tasks.filter(t => !t.isDaily))}
+                      className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                    >
+                      Remover diários
+                    </button>
+                    <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                      <ClipboardList className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                    </div>
                   </div>
                 </div>
 
@@ -612,8 +661,16 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
                   <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Objetivos Estratégicos</p>
                 </div>
-                <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
-                  <Target className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setGoals(goals.filter(g => !g.isDaily))}
+                    className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                  >
+                    Remover diários
+                  </button>
+                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                    <Target className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  </div>
                 </div>
               </div>
 
@@ -623,6 +680,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 const title = f.get('title') as string;
                 const cat = f.get('category') as Category;
                 const date = (f.get('date') as string) || filterDate;
+                const isDaily = f.get('daily') === 'on';
                 if(!title) return;
                 setGoals([{ 
                   id: crypto.randomUUID(), 
@@ -630,7 +688,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   completed: false, 
                   date: date + 'T12:00:00', 
                   category: cat, 
-                  priority: Priority.MEDIUM 
+                  priority: Priority.MEDIUM,
+                  isDaily
                 }, ...goals]);
                 e.currentTarget.reset();
               }} className="space-y-4">
@@ -642,6 +701,10 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     defaultValue={filterDate}
                     className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
                   />
+                  <label className={`flex items-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
+                    <input type="checkbox" name="daily" className="accent-rose-500" />
+                    Todos os dias
+                  </label>
                   <div className="flex gap-2">
                     <select name="category" className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
                       <option value="Trabalho">Trabalho</option>
@@ -684,8 +747,16 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Checklist</h3>
                   <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Execução Diária</p>
                 </div>
-                <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
-                  <ClipboardList className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setTasks(tasks.filter(t => !t.isDaily))}
+                    className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                  >
+                    Remover diários
+                  </button>
+                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                    <ClipboardList className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  </div>
                 </div>
               </div>
 
@@ -694,6 +765,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 const f = new FormData(e.currentTarget);
                 const title = f.get('title') as string;
                 const date = (f.get('date') as string) || filterDate;
+                const isDaily = f.get('daily') === 'on';
                 const category = (f.get('category') as Category) || 'Outros';
                 if(!title) return;
                 setTasks([{ 
@@ -702,7 +774,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   completed: false, 
                   scheduledDate: date + 'T12:00:00', 
                   createdAt: new Date().toISOString(),
-                  category
+                  category,
+                  isDaily
                 }, ...tasks]);
                 e.currentTarget.reset();
               }} className="space-y-4">
@@ -714,6 +787,10 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     defaultValue={filterDate}
                     className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none w-full sm:w-auto ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
                   />
+                  <label className={`flex items-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
+                    <input type="checkbox" name="daily" className="accent-rose-500" />
+                    Todos os dias
+                  </label>
                   <select name="category" defaultValue="Outros" className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}>
                     <option value="Trabalho">Trabalho</option>
                     <option value="Pessoal">Pessoal</option>
