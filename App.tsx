@@ -300,7 +300,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         </div>
       )}
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-16 max-w-7xl mx-auto w-full mt-16 lg:mt-0 overflow-x-hidden">
+      <main className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto w-full mt-16 lg:mt-0 overflow-x-hidden">
         <div className="space-y-16 animate-fade-in">
           {isLoading && (
             <div className={`px-6 py-4 rounded-3xl text-[10px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
@@ -336,7 +336,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   <button 
                     key={tab} 
                     onClick={() => handleQuickDateFilter(tab)}
-                    className={`px-5 py-2.5 rounded-2xl text-[9px] font-black uppercase transition-all ${activeFilterTab === tab ? (isFem ? 'bg-rose-600 text-white shadow-lg shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-300 hover:text-rose-600' : 'text-zinc-600')}`}
+                    className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase transition-all ${activeFilterTab === tab ? (isFem ? 'bg-rose-600 text-white shadow-lg shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-300 hover:text-rose-600' : 'text-zinc-600')}`}
                   >
                     {tab}
                   </button>
@@ -413,7 +413,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       ))}
                     </div>
                   ) : (
-                    <section className={`space-y-8 p-6 sm:p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                    <section className={`space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                         <div>
                           <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>{activeCompany}</h3>
@@ -470,7 +470,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
                       <div className="space-y-6">
                         {getCompanyProjects(activeCompany).map(project => (
-                          <div key={project.id} className={`p-6 sm:p-8 rounded-[3rem] border ${isFem ? 'bg-rose-50/40 border-rose-100' : 'bg-black border-zinc-800'}`}>
+                          <div key={project.id} className={`p-5 sm:p-6 lg:p-6 rounded-[3rem] border ${isFem ? 'bg-rose-50/40 border-rose-100' : 'bg-black border-zinc-800'}`}>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                               <div>
                                 <h4 className={`text-xl font-black uppercase ${isFem ? 'text-rose-800' : 'text-white'}`}>{project.title}</h4>
@@ -596,7 +596,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           ) : location.pathname === '/checklist' ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
               {/* --- CHECKLIST METAS --- */}
-              <section className={`flex flex-col space-y-8 p-6 sm:p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+              <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
@@ -638,7 +638,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               </section>
 
               {/* --- CHECKLIST TAREFAS --- */}
-              <section className={`flex flex-col space-y-8 p-6 sm:p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+              <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                 <div className="flex justify-between items-center">
                   <div>
                     <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Tarefas do Dia</h3>
@@ -684,7 +684,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             
             {/* --- DASHBOARD DE METAS --- */}
-            <section className={`flex flex-col space-y-8 p-6 sm:p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+            <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
@@ -770,7 +770,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             </section>
 
             {/* --- DASHBOARD DE TAREFAS --- */}
-            <section className={`flex flex-col space-y-8 p-6 sm:p-10 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+            <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Checklist</h3>

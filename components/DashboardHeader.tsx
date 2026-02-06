@@ -22,7 +22,7 @@ export const DashboardHeader: React.FC<Props> = ({ total, completed, pending, ra
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-10">
-      <div className={`${cardBase} p-6 sm:p-8 lg:p-10 rounded-[3rem] border relative group overflow-hidden`}>
+      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-rose-500/5' : 'bg-blue-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
         <div className="flex items-center justify-between mb-8">
           <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Mapeado</span>
@@ -30,11 +30,11 @@ export const DashboardHeader: React.FC<Props> = ({ total, completed, pending, ra
              <Target className={`${isFem ? 'text-rose-600' : 'text-blue-600'} w-5 h-5`} />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-6xl font-black ${valueText} italic tracking-tighter leading-none`}>{total}</div>
+        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{total}</div>
         <p className={`${labelText} text-[10px] font-black uppercase mt-5 tracking-widest`}>Objetivos</p>
       </div>
       
-      <div className={`${cardBase} p-6 sm:p-8 lg:p-10 rounded-[3rem] border relative group overflow-hidden`}>
+      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-emerald-500/5' : 'bg-emerald-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
         <div className="flex items-center justify-between mb-8">
           <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Sucesso</span>
@@ -42,11 +42,11 @@ export const DashboardHeader: React.FC<Props> = ({ total, completed, pending, ra
              <CheckCircle className="text-emerald-500 w-5 h-5" />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-6xl font-black ${valueText} italic tracking-tighter leading-none`}>{completed}</div>
+        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{completed}</div>
         <p className="text-[10px] font-black uppercase text-emerald-500 mt-5 tracking-widest">Executados</p>
       </div>
 
-      <div className={`${cardBase} p-6 sm:p-8 lg:p-10 rounded-[3rem] border relative group overflow-hidden`}>
+      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-rose-500/5' : 'bg-orange-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
         <div className="flex items-center justify-between mb-8">
           <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Ação</span>
@@ -54,11 +54,11 @@ export const DashboardHeader: React.FC<Props> = ({ total, completed, pending, ra
              <Clock className={`${isFem ? 'text-rose-600' : 'text-orange-600'} w-5 h-5`} />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-6xl font-black ${valueText} italic tracking-tighter leading-none`}>{pending}</div>
+        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{pending}</div>
         <p className={`${isFem ? 'text-rose-600' : 'text-orange-600'} text-[10px] font-black uppercase mt-5 tracking-widest`}>Pendentes</p>
       </div>
 
-      <div className={`${cardBase} p-6 sm:p-8 lg:p-10 rounded-[3rem] border relative group overflow-hidden`}>
+      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-purple-500/5' : 'bg-purple-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
         <div className="flex items-center justify-between mb-8">
           <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Eficiência</span>
@@ -66,7 +66,7 @@ export const DashboardHeader: React.FC<Props> = ({ total, completed, pending, ra
              <TrendingUp className="text-purple-500 w-5 h-5" />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-6xl font-black ${valueText} italic tracking-tighter leading-none`}>{rate}<span className="text-2xl ml-1">%</span></div>
+        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{rate}<span className="text-2xl ml-1">%</span></div>
         <p className="text-[10px] font-black uppercase text-purple-500 mt-5 tracking-widest">Taxa de Foco</p>
       </div>
     </div>
