@@ -542,9 +542,10 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                           const title = (f.get('title') as string)?.trim();
                           const type = (f.get('type') as 'funil' | 'estrutura') || 'funil';
                           if (!title) return;
+                          const projectId = crypto.randomUUID();
                           setProjects([
                             {
-                              id: crypto.randomUUID(),
+                              id: projectId,
                               title,
                               type,
                               createdAt: new Date().toISOString(),
@@ -552,6 +553,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                             },
                             ...projects
                           ]);
+                          addBlockToProject(projectId, {
+                            title: type === 'funil' ? 'Início do Funil' : 'Base da Estrutura',
+                            description: 'Defina o primeiro passo',
+                            type: type === 'funil' ? 'funil' : 'estrategico'
+                          });
                           e.currentTarget.reset();
                         }}
                         className="flex flex-col lg:flex-row gap-3"
@@ -660,6 +666,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                   ]);
                                 }}
                               />
+                              {getProjectBlocks(project.id).length === 0 && (
+                                <div className="text-center text-[9px] font-black uppercase tracking-[0.4em] opacity-60">
+                                  Adicione uma etapa para começar
+                                </div>
+                              )}
                             </div>
 
                             <div className="mt-6 space-y-4">
