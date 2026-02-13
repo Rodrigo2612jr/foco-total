@@ -22,9 +22,10 @@ interface Props {
   onEditNode?: (id: string) => void;
   theme?: 'feminine' | 'masculine';
   onDuplicateNode?: (id: string) => void;
+  onAddNode?: (position: { x: number; y: number }) => void;
 }
 
-export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, onDuplicateNode, theme = 'feminine' }) => {
+export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, onDuplicateNode, onAddNode, theme = 'feminine' }) => {
   const isFem = theme === 'feminine';
   const nodeTypes = useMemo(() => ({
     strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => (
@@ -112,6 +113,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
         onNodeDoubleClick={(_, node) => onEditNode?.(node.id)}
+        onPaneDoubleClick={(_, position) => onAddNode?.(position)}
         fitView
       >
         <MiniMap />

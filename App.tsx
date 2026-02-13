@@ -299,7 +299,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const getProjectEdges = (projectId: string) =>
     edges.filter(e => e.projectId === projectId);
 
-  const addBlockToProject = (projectId: string, payload: Pick<StrategyBlock, 'title' | 'description' | 'type'>) => {
+  const addBlockToProject = (
+    projectId: string,
+    payload: Pick<StrategyBlock, 'title' | 'description' | 'type'>,
+    position?: { x: number; y: number }
+  ) => {
     const existing = getProjectBlocks(projectId);
     const nextIndex = existing.length + 1;
     setBlocks([
@@ -310,7 +314,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         type: payload.type,
         order: nextIndex,
         projectId,
-        position: { x: 80 + (nextIndex % 4) * 220, y: 80 + Math.floor(nextIndex / 4) * 160 }
+        position: position ?? { x: 80 + (nextIndex % 4) * 220, y: 80 + Math.floor(nextIndex / 4) * 160 }
       },
       ...blocks
     ]);
@@ -665,11 +669,18 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                     ...updatedEdges.map(e => ({ ...e, projectId: project.id }))
                                   ]);
                                 }}
+                                onAddNode={(position) =>
+                                  addBlockToProject(project.id, {
+                                    title: 'Nova Etapa',
+                                    description: 'Defina a ação',
+                                    type: 'funil'
+                                  }, position)
+                                }
                               />
                               {getProjectBlocks(project.id).length === 0 && (
                                 <div className="text-center space-y-3">
                                   <div className="text-[9px] font-black uppercase tracking-[0.4em] opacity-60">
-                                    Adicione uma etapa para começar
+                                    Duplo clique no quadro para criar um bloco
                                   </div>
                                   <button
                                     onClick={() => addBlockToProject(project.id, { title: 'Primeira Etapa', description: 'Defina a ação', type: 'funil' })}
