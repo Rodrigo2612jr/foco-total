@@ -304,20 +304,25 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     payload: Pick<StrategyBlock, 'title' | 'description' | 'type'>,
     position?: { x: number; y: number }
   ) => {
-    const existing = getProjectBlocks(projectId);
-    const nextIndex = existing.length + 1;
-    setBlocks([
-      {
-        id: crypto.randomUUID(),
-        title: payload.title,
-        description: payload.description,
-        type: payload.type,
-        order: nextIndex,
-        projectId,
-        position: position ?? { x: 80 + (nextIndex % 4) * 220, y: 80 + Math.floor(nextIndex / 4) * 160 }
-      },
-      ...blocks
-    ]);
+    setBlocks(prev => {
+      const existing = prev.filter(b => b.projectId === projectId).sort((a, b) => a.order - b.order);
+      const nextIndex = existing.length + 1;
+      const fallbackPosition = existing.length
+        ? { x: (existing[0].position?.x ?? 120) + nextIndex * 20, y: (existing[0].position?.y ?? 120) + nextIndex * 20 }
+        : { x: 120, y: 120 };
+      return [
+        {
+          id: crypto.randomUUID(),
+          title: payload.title,
+          description: payload.description,
+          type: payload.type,
+          order: nextIndex,
+          projectId,
+          position: position ?? fallbackPosition
+        },
+        ...prev
+      ];
+    });
   };
 
   const addTemplateFunnel = (projectId: string) => {
@@ -334,8 +339,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       { id: crypto.randomUUID(), source: templateBlocks[1].id, target: templateBlocks[2].id, projectId },
       { id: crypto.randomUUID(), source: templateBlocks[2].id, target: templateBlocks[3].id, projectId }
     ];
-    setBlocks([...templateBlocks, ...blocks]);
-    setEdges([...templateEdges, ...edges]);
+    setBlocks(prev => [...templateBlocks, ...prev]);
+    setEdges(prev => [...templateEdges, ...prev]);
   };
 
   const addTemplateStructure = (projectId: string) => {
@@ -351,8 +356,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       { id: crypto.randomUUID(), source: templateBlocks[0].id, target: templateBlocks[2].id, projectId },
       { id: crypto.randomUUID(), source: templateBlocks[1].id, target: templateBlocks[3].id, projectId }
     ];
-    setBlocks([...templateBlocks, ...blocks]);
-    setEdges([...templateEdges, ...edges]);
+    setBlocks(prev => [...templateBlocks, ...prev]);
+    setEdges(prev => [...templateEdges, ...prev]);
   };
 
   const Sidebar = () => (

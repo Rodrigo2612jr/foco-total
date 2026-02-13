@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -29,6 +29,7 @@ interface Props {
 export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, onDuplicateNode, onAddNode, theme = 'feminine' }) => {
   const isFem = theme === 'feminine';
   const [instance, setInstance] = useState<ReactFlowInstance | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const nodeTypes = useMemo(() => ({
     strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => (
       <div className={`rounded-2xl border px-4 py-3 shadow-sm min-w-[160px] ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-zinc-950'}`}>
@@ -106,7 +107,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
   };
 
   return (
-    <div className={`h-[60vh] sm:h-[65vh] lg:h-[70vh] w-full rounded-[2.5rem] overflow-hidden border ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-black'}`}>
+    <div ref={wrapperRef} className={`h-[60vh] sm:h-[65vh] lg:h-[70vh] w-full rounded-[2.5rem] overflow-hidden border ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-black'}`}>
       <ReactFlow
         nodes={nodes}
         edges={flowEdges}
@@ -119,11 +120,16 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
         onPaneDoubleClick={(event) => {
           if (!onAddNode) return;
           if (!instance) return;
-          const bounds = (event.target as HTMLElement).getBoundingClientRect();
+          const bounds = wrapperRef.current?.getBoundingClientRect();
+          if (!bounds) return;
           const position = instance.project({
             x: event.clientX - bounds.left,
             y: event.clientY - bounds.top
           });
+          if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
+            onAddNode({ x: 120, y: 120 });
+            return;
+          }
           onAddNode(position);
         }}
         fitView
