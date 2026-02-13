@@ -667,8 +667,16 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                 }}
                               />
                               {getProjectBlocks(project.id).length === 0 && (
-                                <div className="text-center text-[9px] font-black uppercase tracking-[0.4em] opacity-60">
-                                  Adicione uma etapa para começar
+                                <div className="text-center space-y-3">
+                                  <div className="text-[9px] font-black uppercase tracking-[0.4em] opacity-60">
+                                    Adicione uma etapa para começar
+                                  </div>
+                                  <button
+                                    onClick={() => addBlockToProject(project.id, { title: 'Primeira Etapa', description: 'Defina a ação', type: 'funil' })}
+                                    className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
+                                  >
+                                    Criar bloco
+                                  </button>
                                 </div>
                               )}
                             </div>
