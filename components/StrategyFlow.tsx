@@ -5,7 +5,6 @@ import ReactFlow, {
   MiniMap,
   applyNodeChanges,
   applyEdgeChanges,
-  addEdge,
   Connection,
   Edge,
   Node,
@@ -22,18 +21,35 @@ interface Props {
   onEdgesChange: (edges: StrategyEdge[]) => void;
   onEditNode?: (id: string) => void;
   theme?: 'feminine' | 'masculine';
+  onDuplicateNode?: (id: string) => void;
 }
 
-export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, theme = 'feminine' }) => {
+export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, onDuplicateNode, theme = 'feminine' }) => {
   const isFem = theme === 'feminine';
   const nodeTypes = useMemo(() => ({
-    strategy: ({ data }: { data: { title: string; type: string; description?: string } }) => (
+    strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => (
       <div className={`rounded-2xl border px-4 py-3 shadow-sm min-w-[160px] ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-zinc-950'}`}>
         <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>{data.type}</div>
         <div className={`text-sm font-black uppercase mt-1 ${isFem ? 'text-rose-800' : 'text-white'}`}>{data.title}</div>
         {data.description && (
           <div className={`text-[9px] uppercase tracking-[0.2em] mt-2 ${isFem ? 'text-rose-500' : 'text-zinc-400'}`}>{data.description}</div>
         )}
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEditNode?.(data.id)}
+            className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => onDuplicateNode?.(data.id)}
+            className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+          >
+            Duplicar
+          </button>
+        </div>
       </div>
     )
   }), [isFem]);
@@ -42,7 +58,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
     return blocks.map((block, index) => ({
       id: block.id,
       position: block.position ?? { x: 60 + (index % 3) * 240, y: 60 + Math.floor(index / 3) * 160 },
-      data: { title: block.title, type: block.type, description: block.description },
+      data: { id: block.id, title: block.title, type: block.type, description: block.description },
       type: 'strategy'
     }));
   }, [blocks]);

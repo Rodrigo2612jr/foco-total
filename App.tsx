@@ -621,11 +621,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                   Adicionar Nota
                                 </button>
                               </div>
-                              <StrategyFlow
+                                <StrategyFlow
                                 blocks={getProjectBlocks(project.id)}
                                 edges={getProjectEdges(project.id)}
                                 theme={user.theme}
-                                onEditNode={(nodeId) => {
+                                  onEditNode={(nodeId) => {
                                   const target = blocks.find(b => b.id === nodeId);
                                   if (!target) return;
                                   const title = prompt('Título do elemento:', target.title);
@@ -634,6 +634,19 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                   if (description === null) return;
                                   setBlocks(blocks.map(b => b.id === nodeId ? { ...b, title: title.trim() || b.title, description: description.trim() || b.description } : b));
                                 }}
+                                  onDuplicateNode={(nodeId) => {
+                                    const target = blocks.find(b => b.id === nodeId);
+                                    if (!target) return;
+                                    setBlocks([
+                                      {
+                                        ...target,
+                                        id: crypto.randomUUID(),
+                                        title: `${target.title} (Cópia)`,
+                                        position: target.position ? { x: target.position.x + 30, y: target.position.y + 30 } : undefined
+                                      },
+                                      ...blocks
+                                    ]);
+                                  }}
                                 onBlocksChange={(updatedBlocks) => {
                                   setBlocks([
                                     ...blocks.filter(b => b.projectId !== project.id),
