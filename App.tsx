@@ -299,6 +299,58 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const getProjectEdges = (projectId: string) =>
     edges.filter(e => e.projectId === projectId);
 
+  const addBlockToProject = (projectId: string, payload: Pick<StrategyBlock, 'title' | 'description' | 'type'>) => {
+    const existing = getProjectBlocks(projectId);
+    const nextIndex = existing.length + 1;
+    setBlocks([
+      {
+        id: crypto.randomUUID(),
+        title: payload.title,
+        description: payload.description,
+        type: payload.type,
+        order: nextIndex,
+        projectId,
+        position: { x: 80 + (nextIndex % 4) * 220, y: 80 + Math.floor(nextIndex / 4) * 160 }
+      },
+      ...blocks
+    ]);
+  };
+
+  const addTemplateFunnel = (projectId: string) => {
+    const baseX = 80;
+    const baseY = 80;
+    const templateBlocks: StrategyBlock[] = [
+      { id: crypto.randomUUID(), title: 'Atrair', description: 'Anúncios + Conteúdo', type: 'ads', order: 1, projectId, position: { x: baseX, y: baseY } },
+      { id: crypto.randomUUID(), title: 'Capturar', description: 'Landing Page', type: 'lp', order: 2, projectId, position: { x: baseX + 240, y: baseY } },
+      { id: crypto.randomUUID(), title: 'Nutrir', description: 'Sequência de e-mails', type: 'email', order: 3, projectId, position: { x: baseX + 480, y: baseY } },
+      { id: crypto.randomUUID(), title: 'Converter', description: 'Checkout + Oferta', type: 'checkout', order: 4, projectId, position: { x: baseX + 720, y: baseY } }
+    ];
+    const templateEdges: StrategyEdge[] = [
+      { id: crypto.randomUUID(), source: templateBlocks[0].id, target: templateBlocks[1].id, projectId },
+      { id: crypto.randomUUID(), source: templateBlocks[1].id, target: templateBlocks[2].id, projectId },
+      { id: crypto.randomUUID(), source: templateBlocks[2].id, target: templateBlocks[3].id, projectId }
+    ];
+    setBlocks([...templateBlocks, ...blocks]);
+    setEdges([...templateEdges, ...edges]);
+  };
+
+  const addTemplateStructure = (projectId: string) => {
+    const baseX = 80;
+    const baseY = 80;
+    const templateBlocks: StrategyBlock[] = [
+      { id: crypto.randomUUID(), title: 'Vendas', description: 'Processo comercial', type: 'vendas', order: 1, projectId, position: { x: baseX, y: baseY } },
+      { id: crypto.randomUUID(), title: 'Operacional', description: 'Entrega & execução', type: 'operacional', order: 2, projectId, position: { x: baseX, y: baseY + 180 } },
+      { id: crypto.randomUUID(), title: 'Financeiro', description: 'Fluxo de caixa', type: 'financeiro', order: 3, projectId, position: { x: baseX + 260, y: baseY } },
+      { id: crypto.randomUUID(), title: 'Estratégico', description: 'OKRs e metas', type: 'estrategico', order: 4, projectId, position: { x: baseX + 260, y: baseY + 180 } }
+    ];
+    const templateEdges: StrategyEdge[] = [
+      { id: crypto.randomUUID(), source: templateBlocks[0].id, target: templateBlocks[2].id, projectId },
+      { id: crypto.randomUUID(), source: templateBlocks[1].id, target: templateBlocks[3].id, projectId }
+    ];
+    setBlocks([...templateBlocks, ...blocks]);
+    setEdges([...templateEdges, ...edges]);
+  };
+
   const Sidebar = () => (
     <aside className={`w-72 flex flex-col h-full ${isFem ? 'bg-white border-r border-rose-100' : 'bg-black border-r border-zinc-900'}`}>
       <div className="p-12 text-center">
@@ -542,10 +594,46 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                               </button>
                             </div>
 
-                            <div className="mt-6">
+                            <div className="mt-6 space-y-4">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => addTemplateFunnel(project.id)}
+                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
+                                >
+                                  Template Funil
+                                </button>
+                                <button
+                                  onClick={() => addTemplateStructure(project.id)}
+                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
+                                >
+                                  Template Estrutura
+                                </button>
+                                <button
+                                  onClick={() => addBlockToProject(project.id, { title: 'Nova Etapa', description: 'Defina a ação', type: 'funil' })}
+                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                                >
+                                  Adicionar Etapa
+                                </button>
+                                <button
+                                  onClick={() => addBlockToProject(project.id, { title: 'Nota Estratégica', description: 'Insight rápido', type: 'estrategico' })}
+                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                                >
+                                  Adicionar Nota
+                                </button>
+                              </div>
                               <StrategyFlow
                                 blocks={getProjectBlocks(project.id)}
                                 edges={getProjectEdges(project.id)}
+                                theme={user.theme}
+                                onEditNode={(nodeId) => {
+                                  const target = blocks.find(b => b.id === nodeId);
+                                  if (!target) return;
+                                  const title = prompt('Título do elemento:', target.title);
+                                  if (title === null) return;
+                                  const description = prompt('Descrição rápida:', target.description);
+                                  if (description === null) return;
+                                  setBlocks(blocks.map(b => b.id === nodeId ? { ...b, title: title.trim() || b.title, description: description.trim() || b.description } : b));
+                                }}
                                 onBlocksChange={(updatedBlocks) => {
                                   setBlocks([
                                     ...blocks.filter(b => b.projectId !== project.id),

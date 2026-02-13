@@ -20,20 +20,23 @@ interface Props {
   edges: StrategyEdge[];
   onBlocksChange: (blocks: StrategyBlock[]) => void;
   onEdgesChange: (edges: StrategyEdge[]) => void;
+  onEditNode?: (id: string) => void;
+  theme?: 'feminine' | 'masculine';
 }
 
-export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange }) => {
+export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, theme = 'feminine' }) => {
+  const isFem = theme === 'feminine';
   const nodeTypes = useMemo(() => ({
     strategy: ({ data }: { data: { title: string; type: string; description?: string } }) => (
-      <div className="rounded-2xl border border-rose-100 bg-white px-4 py-3 shadow-sm min-w-[160px]">
-        <div className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-400">{data.type}</div>
-        <div className="text-sm font-black uppercase text-rose-800 mt-1">{data.title}</div>
+      <div className={`rounded-2xl border px-4 py-3 shadow-sm min-w-[160px] ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-zinc-950'}`}>
+        <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>{data.type}</div>
+        <div className={`text-sm font-black uppercase mt-1 ${isFem ? 'text-rose-800' : 'text-white'}`}>{data.title}</div>
         {data.description && (
-          <div className="text-[9px] uppercase tracking-[0.2em] text-rose-500 mt-2">{data.description}</div>
+          <div className={`text-[9px] uppercase tracking-[0.2em] mt-2 ${isFem ? 'text-rose-500' : 'text-zinc-400'}`}>{data.description}</div>
         )}
       </div>
     )
-  }), []);
+  }), [isFem]);
 
   const nodes = useMemo<Node[]>(() => {
     return blocks.map((block, index) => ({
@@ -84,7 +87,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
   };
 
   return (
-    <div className="h-[320px] sm:h-[420px] lg:h-[520px] w-full rounded-[2.5rem] overflow-hidden border border-rose-100 bg-white">
+    <div className={`h-[320px] sm:h-[420px] lg:h-[520px] w-full rounded-[2.5rem] overflow-hidden border ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-black'}`}>
       <ReactFlow
         nodes={nodes}
         edges={flowEdges}
@@ -92,6 +95,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
+        onNodeDoubleClick={(_, node) => onEditNode?.(node.id)}
         fitView
       >
         <MiniMap />
