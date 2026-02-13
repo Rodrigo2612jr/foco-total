@@ -9,7 +9,8 @@ import ReactFlow, {
   Edge,
   Node,
   NodeChange,
-  EdgeChange
+  EdgeChange,
+  useReactFlow
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { StrategyBlock, StrategyEdge } from '../types';
@@ -27,6 +28,7 @@ interface Props {
 
 export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, onDuplicateNode, onAddNode, theme = 'feminine' }) => {
   const isFem = theme === 'feminine';
+  const { project } = useReactFlow();
   const nodeTypes = useMemo(() => ({
     strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => (
       <div className={`rounded-2xl border px-4 py-3 shadow-sm min-w-[160px] ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-zinc-950'}`}>
@@ -113,7 +115,15 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
         onNodeDoubleClick={(_, node) => onEditNode?.(node.id)}
-        onPaneDoubleClick={(_, position) => onAddNode?.(position)}
+        onPaneDoubleClick={(event) => {
+          if (!onAddNode) return;
+          const bounds = (event.target as HTMLElement).getBoundingClientRect();
+          const position = project({
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top
+          });
+          onAddNode(position);
+        }}
         fitView
       >
         <MiniMap />

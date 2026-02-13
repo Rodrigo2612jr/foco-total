@@ -692,32 +692,6 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                               )}
                             </div>
 
-                            <div className="mt-6 space-y-4">
-                              {getProjectBlocks(project.id).map(block => (
-                                <div key={block.id} className={`p-4 sm:p-5 rounded-[2rem] border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
-                                  <div className="space-y-2">
-                                    <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>{block.type}</div>
-                                    <div className={`text-sm font-black uppercase ${isFem ? 'text-rose-800' : 'text-white'}`}>{block.title}</div>
-                                    <p className={`text-[10px] uppercase tracking-[0.2em] ${isFem ? 'text-rose-500' : 'text-zinc-500'}`}>{block.description}</p>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      setBlocks(blocks.filter(b => b.id !== block.id));
-                                      setEdges(edges.filter(e => e.source !== block.id && e.target !== block.id));
-                                    }}
-                                    className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
-                                  >
-                                    Excluir
-                                  </button>
-                                </div>
-                              ))}
-                              {getProjectBlocks(project.id).length === 0 && (
-                                <div className="text-center py-8 opacity-20">
-                                  <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem elementos</p>
-                                </div>
-                              )}
-                            </div>
-
                             <form
                               onSubmit={e => {
                                 e.preventDefault();
