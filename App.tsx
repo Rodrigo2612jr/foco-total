@@ -286,7 +286,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
   const isPascoto = user.username === 'pascoto';
   const companies: Project['company'][] = ['Empório Pascoto', 'Pascoto100k'];
-  const strategyTypes: StrategyBlockType[] = ['vendas', 'financeiro', 'operacional', 'estrategico', 'funil', 'ads', 'lp', 'email', 'checkout'];
+  const strategyTypes: StrategyBlockType[] = ['vendas', 'financeiro', 'operacional', 'estrategico', 'funil', 'ads', 'lp', 'email', 'checkout', 'nota'];
 
   const getCompanyProjects = (company: Project['company']) =>
     projects.filter(p => p.company === company).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
@@ -630,11 +630,29 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                   Adicionar Etapa
                                 </button>
                                 <button
-                                  onClick={() => addBlockToProject(project.id, { title: 'Nota Estratégica', description: 'Insight rápido', type: 'estrategico' })}
+                                  onClick={() => addBlockToProject(project.id, { title: 'Nota Estratégica', description: 'Insight rápido', type: 'nota' })}
                                   className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
                                 >
                                   Adicionar Nota
                                 </button>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <div className={`px-3 py-2 rounded-2xl text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-600' : 'bg-zinc-900 text-zinc-400'}`}>
+                                  Arraste itens para o quadro
+                                </div>
+                                {(['funil','ads','lp','email','checkout','vendas','operacional','financeiro','estrategico','nota'] as StrategyBlockType[]).map(item => (
+                                  <div
+                                    key={item}
+                                    draggable
+                                    onDragStart={(e) => {
+                                      e.dataTransfer.setData('application/strategy-node', item);
+                                      e.dataTransfer.effectAllowed = 'move';
+                                    }}
+                                    className={`px-3 py-2 rounded-2xl text-[8px] font-black uppercase tracking-[0.3em] cursor-grab ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                                  >
+                                    {item}
+                                  </div>
+                                ))}
                               </div>
                                 <StrategyFlow
                                 blocks={getProjectBlocks(project.id)}
@@ -674,13 +692,16 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                     ...updatedEdges.map(e => ({ ...e, projectId: project.id }))
                                   ]);
                                 }}
-                                onAddNode={(position) =>
+                                onAddNode={(position, nodeType) => {
+                                  const type = (nodeType as StrategyBlockType) || 'funil';
+                                  const defaultTitle = type === 'nota' ? 'Nota' : 'Nova Etapa';
+                                  const defaultDesc = type === 'nota' ? 'Insight rápido' : 'Defina a ação';
                                   addBlockToProject(project.id, {
-                                    title: 'Nova Etapa',
-                                    description: 'Defina a ação',
-                                    type: 'funil'
-                                  }, position)
-                                }
+                                    title: defaultTitle,
+                                    description: defaultDesc,
+                                    type
+                                  }, position);
+                                }}
                               />
                               {getProjectBlocks(project.id).length === 0 && (
                                 <div className="text-center space-y-3">

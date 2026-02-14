@@ -23,7 +23,7 @@ interface Props {
   onEditNode?: (id: string) => void;
   theme?: 'feminine' | 'masculine';
   onDuplicateNode?: (id: string) => void;
-  onAddNode?: (position: { x: number; y: number }) => void;
+  onAddNode?: (position: { x: number; y: number }, type?: string) => void;
 }
 
 export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, onEdgesChange, onEditNode, onDuplicateNode, onAddNode, theme = 'feminine' }) => {
@@ -31,32 +31,48 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
   const [instance, setInstance] = useState<ReactFlowInstance | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const nodeTypes = useMemo(() => ({
-    strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => (
-      <div className={`rounded-2xl border px-4 py-3 shadow-sm min-w-[160px] ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-zinc-950'}`}>
-        <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>{data.type}</div>
-        <div className={`text-sm font-black uppercase mt-1 ${isFem ? 'text-rose-800' : 'text-white'}`}>{data.title}</div>
-        {data.description && (
-          <div className={`text-[9px] uppercase tracking-[0.2em] mt-2 ${isFem ? 'text-rose-500' : 'text-zinc-400'}`}>{data.description}</div>
-        )}
-        <div className="mt-3 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onEditNode?.(data.id)}
-            className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
-          >
-            Editar
-          </button>
-          <button
-            type="button"
-            onClick={() => onDuplicateNode?.(data.id)}
-            className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-          >
-            Duplicar
-          </button>
+    strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => {
+      const isNote = data.type === 'nota';
+      const baseClass = isNote
+        ? (isFem ? 'border-amber-200 bg-amber-50' : 'border-amber-500/40 bg-amber-900/40')
+        : (isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-zinc-950');
+      const tagClass = isNote
+        ? (isFem ? 'text-amber-600' : 'text-amber-300')
+        : (isFem ? 'text-rose-400' : 'text-zinc-500');
+      const titleClass = isNote
+        ? (isFem ? 'text-amber-900' : 'text-amber-100')
+        : (isFem ? 'text-rose-800' : 'text-white');
+      const descClass = isNote
+        ? (isFem ? 'text-amber-700' : 'text-amber-200')
+        : (isFem ? 'text-rose-500' : 'text-zinc-400');
+
+      return (
+        <div className={`rounded-2xl border px-4 py-3 shadow-sm min-w-[180px] ${baseClass}`}>
+          <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${tagClass}`}>{data.type}</div>
+          <div className={`text-sm font-black uppercase mt-1 ${titleClass}`}>{data.title}</div>
+          {data.description && (
+            <div className={`text-[9px] uppercase tracking-[0.2em] mt-2 ${descClass}`}>{data.description}</div>
+          )}
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onEditNode?.(data.id)}
+              className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
+            >
+              Editar
+            </button>
+            <button
+              type="button"
+              onClick={() => onDuplicateNode?.(data.id)}
+              className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+            >
+              Duplicar
+            </button>
+          </div>
         </div>
-      </div>
-    )
-  }), [isFem]);
+      );
+    }
+  }), [isFem, onDuplicateNode, onEditNode]);
 
   const nodes = useMemo<Node[]>(() => {
     return blocks.map((block, index) => ({
@@ -131,6 +147,23 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
             return;
           }
           onAddNode(position);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          if (!onAddNode || !instance) return;
+          const bounds = wrapperRef.current?.getBoundingClientRect();
+          if (!bounds) return;
+          const raw = event.dataTransfer.getData('application/strategy-node');
+          const nodeType = raw || 'funil';
+          const position = instance.project({
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top
+          });
+          onAddNode(position, nodeType);
         }}
         fitView
       >

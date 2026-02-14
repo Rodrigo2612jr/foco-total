@@ -34,7 +34,7 @@ export interface WeeklyStat {
   total: number;
 }
 
-export type StrategyBlockType = 'vendas' | 'financeiro' | 'operacional' | 'estrategico' | 'funil' | 'ads' | 'lp' | 'email' | 'checkout';
+export type StrategyBlockType = 'vendas' | 'financeiro' | 'operacional' | 'estrategico' | 'funil' | 'ads' | 'lp' | 'email' | 'checkout' | 'nota';
 
 export interface StrategyBlock {
   id: string;
