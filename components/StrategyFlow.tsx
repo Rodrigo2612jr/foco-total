@@ -164,7 +164,8 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
           const bounds = wrapperRef.current?.getBoundingClientRect();
           if (!bounds) return;
           const raw = event.dataTransfer.getData('application/strategy-node');
-          const nodeType = raw || 'funil';
+          const rawText = event.dataTransfer.getData('text/plain');
+          const nodeType = raw || rawText || 'funil';
           const position = instance.project({
             x: event.clientX - bounds.left,
             y: event.clientY - bounds.top

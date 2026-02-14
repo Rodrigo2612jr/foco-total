@@ -646,6 +646,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                                     draggable
                                     onDragStart={(e) => {
                                       e.dataTransfer.setData('application/strategy-node', item);
+                                      e.dataTransfer.setData('text/plain', item);
                                       e.dataTransfer.effectAllowed = 'move';
                                     }}
                                     className={`px-3 py-2 rounded-2xl text-[8px] font-black uppercase tracking-[0.3em] cursor-grab ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
