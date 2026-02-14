@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -30,6 +30,12 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
   const isFem = theme === 'feminine';
   const [instance, setInstance] = useState<ReactFlowInstance | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+    useEffect(() => {
+      if (!instance) return;
+      if (nodes.length === 0) return;
+      instance.fitView({ padding: 0.2, duration: 300 });
+    }, [instance, nodes.length]);
+
   const nodeTypes = useMemo(() => ({
     strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => {
       const isNote = data.type === 'nota';
@@ -165,6 +171,9 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
           });
           onAddNode(position, nodeType);
         }}
+        nodesDraggable
+        nodesConnectable
+        elementsSelectable
         fitView
       >
         <MiniMap />
