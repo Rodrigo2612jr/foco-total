@@ -187,7 +187,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       const itemDate = parseISO(item[dateKey]);
       const itemCategory = (item.category ?? 'Outros') as Category;
       const matchesDate = isSameDay(itemDate, selectedDate);
-      const matchesDaily = !!item.isDaily;
+      const matchesDaily = item.isDaily ? (!item.completed || matchesDate) : false;
       const matchesOverdue = includeOverdue && !item.completed && isBefore(itemDate, selectedDate);
       const matchesCategory = filterCategory === 'TUDO' || itemCategory === filterCategory;
       const matchesStatus = filterStatus === 'TODOS'
