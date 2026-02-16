@@ -35,8 +35,8 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
     strategy: ({ data }: { data: { title: string; type: string; description?: string; id: string } }) => {
       const isNote = data.type === 'nota';
       const baseClass = isNote
-        ? (isFem ? 'border-amber-200 bg-amber-50' : 'border-amber-500/40 bg-amber-900/40')
-        : (isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-zinc-950');
+        ? (isFem ? 'border-amber-200 bg-amber-50' : 'border-amber-500/60 bg-amber-900/60')
+        : (isFem ? 'border-rose-100 bg-white' : 'border-blue-500/40 bg-zinc-900');
       const tagClass = isNote
         ? (isFem ? 'text-amber-600' : 'text-amber-300')
         : (isFem ? 'text-rose-400' : 'text-zinc-500');
@@ -48,7 +48,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
         : (isFem ? 'text-rose-500' : 'text-zinc-400');
 
       return (
-        <div className={`rounded-2xl border px-4 py-3 shadow-sm min-w-[180px] ${baseClass}`}>
+        <div className={`rounded-2xl border px-4 py-3 min-w-[180px] ${baseClass} ${isFem ? 'shadow-sm' : 'shadow-[0_10px_30px_rgba(0,0,0,0.6)]'}`}>
           <div className={`text-[9px] font-black uppercase tracking-[0.3em] ${tagClass}`}>{data.type}</div>
           <div className={`text-sm font-black uppercase mt-1 ${titleClass}`}>{data.title}</div>
           {data.description && (
@@ -142,7 +142,7 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
   return (
     <div
       ref={wrapperRef}
-      className={`h-[60vh] sm:h-[65vh] lg:h-[70vh] w-full rounded-[2.5rem] overflow-hidden border ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-black'}`}
+      className={`h-[60vh] sm:h-[65vh] lg:h-[70vh] w-full rounded-[2.5rem] overflow-hidden border ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-[#0A0A0F]'}`}
       onDragOver={(event) => {
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
