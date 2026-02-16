@@ -129,8 +129,34 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
     onEdgesChange([...edges, newEdge]);
   };
 
+  const getCanvasPosition = (event: { clientX: number; clientY: number }) => {
+    if (!instance) return null;
+    const bounds = wrapperRef.current?.getBoundingClientRect();
+    if (!bounds) return null;
+    return instance.project({
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top
+    });
+  };
+
   return (
-    <div ref={wrapperRef} className={`h-[60vh] sm:h-[65vh] lg:h-[70vh] w-full rounded-[2.5rem] overflow-hidden border ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-black'}`}>
+    <div
+      ref={wrapperRef}
+      className={`h-[60vh] sm:h-[65vh] lg:h-[70vh] w-full rounded-[2.5rem] overflow-hidden border ${isFem ? 'border-rose-100 bg-white' : 'border-zinc-800 bg-black'}`}
+      onDragOver={(event) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        if (!onAddNode) return;
+        const raw = event.dataTransfer.getData('application/strategy-node');
+        const rawText = event.dataTransfer.getData('text/plain');
+        const nodeType = raw || rawText || 'funil';
+        const position = getCanvasPosition(event) ?? { x: 120, y: 120 };
+        onAddNode(position, nodeType);
+      }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={flowEdges}
@@ -142,36 +168,8 @@ export const StrategyFlow: React.FC<Props> = ({ blocks, edges, onBlocksChange, o
         onNodeDoubleClick={(_, node) => onEditNode?.(node.id)}
         onPaneDoubleClick={(event) => {
           if (!onAddNode) return;
-          if (!instance) return;
-          const bounds = wrapperRef.current?.getBoundingClientRect();
-          if (!bounds) return;
-          const position = instance.project({
-            x: event.clientX - bounds.left,
-            y: event.clientY - bounds.top
-          });
-          if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
-            onAddNode({ x: 120, y: 120 });
-            return;
-          }
-          onAddNode(position);
-        }}
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = 'move';
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          if (!onAddNode || !instance) return;
-          const bounds = wrapperRef.current?.getBoundingClientRect();
-          if (!bounds) return;
-          const raw = event.dataTransfer.getData('application/strategy-node');
-          const rawText = event.dataTransfer.getData('text/plain');
-          const nodeType = raw || rawText || 'funil';
-          const position = instance.project({
-            x: event.clientX - bounds.left,
-            y: event.clientY - bounds.top
-          });
-          onAddNode(position, nodeType);
+          const position = getCanvasPosition(event);
+          onAddNode(position ?? { x: 120, y: 120 });
         }}
         nodesDraggable
         nodesConnectable
