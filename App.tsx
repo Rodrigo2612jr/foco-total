@@ -1,20 +1,23 @@
+export default function App() {
+  return null;
+}
 
+/*
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { HashRouter as Router, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, Plus, Trash2, Target, ClipboardList, 
-  Heart, Sparkles, Menu, X, CheckCircle2, Circle, 
+  Heart, Menu, X, CheckCircle2, Circle, 
   StickyNote, Star, LogOut, Zap, Filter, Calendar as CalendarIcon, Edit3
 } from 'lucide-react';
 import { format, isSameDay, subDays, parseISO, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-import { Goal, Task, Priority, Category, User, ThemeType, Project, StrategyBlock, StrategyBlockType, StrategyEdge } from './types';
+import { Goal, Task, Priority, Category, User, ThemeType } from './types';
 import { DashboardHeader } from './components/DashboardHeader';
 import { WeeklyChart } from './components/WeeklyChart';
 import { CategoryChart } from './components/CategoryChart';
-import { StrategyFlow } from './components/StrategyFlow';
 import { db } from './services/firebase';
 
 const getSafeStorage = () => {
@@ -29,120 +32,120 @@ const getSafeStorage = () => {
 const getEmptyData = () => ({
   goals: [] as Goal[],
   tasks: [] as Task[],
-  notes: [] as string[],
-  projects: [] as Project[],
-  blocks: [] as StrategyBlock[],
-  edges: [] as StrategyEdge[]
+  notes: [] as string[]
 });
 
 const loadUserData = async (username: string) => {
   const ref = doc(db, 'users', username);
   const snap = await getDoc(ref);
   if (!snap.exists()) return getEmptyData();
-  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[]; edges: StrategyEdge[] }>;
+  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[] }>;
   return {
     goals: Array.isArray(data.goals) ? data.goals : [],
     tasks: Array.isArray(data.tasks) ? data.tasks : [],
-    notes: Array.isArray(data.notes) ? data.notes : [],
-    projects: Array.isArray(data.projects) ? data.projects : [],
-    blocks: Array.isArray(data.blocks) ? data.blocks : [],
-    edges: Array.isArray(data.edges) ? data.edges : []
+    notes: Array.isArray(data.notes) ? data.notes : []
   };
 };
 
-const saveUserData = async (
-  username: string,
-  payload: { goals: Goal[]; tasks: Task[]; notes: string[]; projects: Project[]; blocks: StrategyBlock[]; edges: StrategyEdge[] }
+          {!isChecklistView && (
+            <DashboardHeader {...(isTasksPath ? statsTasks : statsGoals)} theme={user.theme} />
+  payload: { goals: Goal[]; tasks: Task[]; notes: string[] }
 ) => {
-  const ref = doc(db, 'users', username);
-  await setDoc(ref, payload, { merge: true });
-};
+          {isChecklistGoalsPath ? (
+            <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
+                  <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Separadas por filtro</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setGoals(goals.filter(g => !g.isDaily))}
+                    className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                  >
+                    Remover diários
+                  </button>
+                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                    <Target className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  </div>
+                </div>
+              </div>
 
-// --- SUB-COMPONENTS ---
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                {currentGoals.map(g => (
+                  <ChecklistItem 
+                    key={g.id} 
+                    title={g.title} 
+                    category={g.category} 
+                    completed={g.completed} 
+                    date={g.date}
+                    theme={user.theme}
+                    onToggle={() => setGoals(goals.map(x => x.id === g.id ? {...x, completed: !x.completed} : x))}
+                    onDelete={() => setGoals(goals.filter(x => x.id !== g.id))}
+                    onEdit={() => setEditingGoal(g)}
+                  />
+                ))}
+                {currentGoals.length === 0 && (
+                  <div className="text-center py-20 opacity-20">
+                    <Star className="w-12 h-12 mx-auto mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem metas no filtro</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : isChecklistTasksPath ? (
+            <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Tarefas do Dia</h3>
+                  <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Checklist diário</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setTasks(tasks.filter(t => !t.isDaily))}
+                    className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
+                  >
+                    Remover diários
+                  </button>
+                  <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-100' : 'bg-zinc-800'}`}>
+                    <ClipboardList className={`w-6 h-6 ${isFem ? 'text-rose-600' : 'text-blue-500'}`} />
+                  </div>
+                </div>
+              </div>
 
-const ChecklistItem: React.FC<{ 
-  title: string; 
-  category?: string; 
-  completed: boolean; 
-  date: string;
-  theme: ThemeType;
-  onToggle: () => void; 
-  onDelete: () => void;
-  onEdit?: () => void;
-  isOverdue?: boolean;
-}> = ({ title, category, completed, date, theme, onToggle, onDelete, onEdit, isOverdue }) => {
-  const isFem = theme === 'feminine';
-  return (
-    <div className={`flex items-center gap-4 p-5 rounded-[2rem] transition-all duration-500 border ${
-      completed 
-        ? (isFem ? 'bg-rose-100/20 opacity-40 scale-[0.98]' : 'bg-zinc-900/40 opacity-50') 
-        : (isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-200/50' : 'bg-zinc-900 border border-zinc-800')
-    } ${!completed && isOverdue ? (isFem ? 'border-red-400/80' : 'border-red-500/80') : ''}`}>
-      <button onClick={onToggle} className={`shrink-0 transition-transform active:scale-75 ${completed ? (isFem ? 'text-rose-600' : 'text-blue-500') : (isFem ? 'text-rose-300' : 'text-zinc-700')}`}>
-        {completed ? <CheckCircle2 className="w-7 h-7" /> : <Circle className="w-7 h-7" />}
-      </button>
-      <div className="flex-1 min-w-0 text-left">
-        <p className={`text-sm font-bold uppercase tracking-tight truncate ${completed ? 'line-through text-rose-300' : (isFem ? 'text-zinc-900' : 'text-zinc-200')}`}>{title}</p>
-        <div className="flex items-center gap-3 mt-1.5">
-          {category && <span className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-full ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-blue-900/30 text-blue-400'}`}>{category}</span>}
-          <span className={`text-[8px] font-black uppercase tracking-widest ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>{format(parseISO(date), 'dd MMM', { locale: ptBR })}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-3">
-        {onEdit && (
-          <button onClick={onEdit} className={`transition-all hover:scale-110 ${isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-800 hover:text-blue-400'}`}>
-            <Edit3 className="w-4 h-4" />
-          </button>
-        )}
-        <button onClick={onDelete} className={`transition-all hover:scale-110 ${isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-800 hover:text-rose-500'}`}>
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// --- MAIN APP CONTENT ---
-
-const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLogout }) => {
-  const isFem = user.theme === 'feminine';
-  const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeCompany, setActiveCompany] = useState<Project['company'] | null>(null);
-
-  // States
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [notes, setNotes] = useState<string[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [blocks, setBlocks] = useState<StrategyBlock[]>([]);
-  const [edges, setEdges] = useState<StrategyEdge[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [canSave, setCanSave] = useState(false);
-  const hasLoadedRef = useRef(false);
-  const saveTimerRef = useRef<number | null>(null);
-  
-  // Advanced Filter States
-  const [filterDate, setFilterDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [filterCategory, setFilterCategory] = useState<string>('TUDO');
-  const [activeFilterTab, setActiveFilterTab] = useState<'HOJE' | 'ONTEM' | 'OUTRO'>('HOJE');
-  const [filterStatus, setFilterStatus] = useState<'TODOS' | 'PENDENTES' | 'CONCLUIDOS'>('TODOS');
-
-  useEffect(() => {
-    let isMounted = true;
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                {currentTasks.map(t => (
+                  <ChecklistItem 
+                    key={t.id} 
+                    title={t.title} 
+                    category={t.category}
+                    completed={t.completed} 
+                    date={t.scheduledDate}
+                    theme={user.theme}
+                    isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
+                    onToggle={() => setTasks(tasks.map(x => x.id === t.id ? {...x, completed: !x.completed} : x))}
+                    onDelete={() => setTasks(tasks.filter(x => x.id !== t.id))}
+                    onEdit={() => setEditingTask(t)}
+                  />
+                ))}
+                {currentTasks.length === 0 && (
+                  <div className="text-center py-20 opacity-20">
+                    <ClipboardList className="w-12 h-12 mx-auto mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem tarefas no filtro</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : (
     setIsLoading(true);
     hasLoadedRef.current = false;
 
     loadUserData(user.username)
-      .then(({ goals, tasks, notes, projects, blocks, edges }) => {
+      .then(({ goals, tasks, notes }) => {
         if (!isMounted) return;
         setGoals(goals);
         setTasks(tasks);
         setNotes(notes);
-        setProjects(projects);
-        setBlocks(blocks);
-        setEdges(edges);
-        setActiveCompany(null);
         setCanSave(true);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -152,10 +155,6 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setGoals([]);
         setTasks([]);
         setNotes([]);
-        setProjects([]);
-        setBlocks([]);
-        setEdges([]);
-        setActiveCompany(null);
         setCanSave(false);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -171,7 +170,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
-      saveUserData(user.username, { goals, tasks, notes, projects, blocks, edges }).catch(() => {
+      saveUserData(user.username, { goals, tasks, notes }).catch(() => {
         // ignore save errors
       });
     }, 400);
@@ -179,7 +178,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, projects, blocks, edges, user.username, isLoading, canSave]);
+  }, [goals, tasks, notes, user.username, isLoading, canSave]);
 
   const applyFilters = (items: any[], dateKey: string, includeOverdue = false) => {
     const selectedDate = parseISO(filterDate);
@@ -208,52 +207,53 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     setFilterDate(format(date, 'yyyy-MM-dd'));
   };
 
-  const stats = {
-    total: goals.length + tasks.length,
-    completed: goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length,
-    pending: (goals.length + tasks.length) - (goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length),
-    rate: (goals.length + tasks.length) ? (((goals.filter(g => g.completed).length + tasks.filter(t => t.completed).length) / (goals.length + tasks.length)) * 100).toFixed(0) : "0"
+  const statsGoals = {
+    total: goals.length,
+    completed: goals.filter(g => g.completed).length,
+    pending: goals.length - goals.filter(g => g.completed).length,
+    rate: goals.length ? ((goals.filter(g => g.completed).length / goals.length) * 100).toFixed(0) : '0'
   };
 
-  const editGoal = (goal: Goal) => {
-    const title = prompt('Editar meta (título):', goal.title);
-    if (title === null) return;
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
-    const dateInput = prompt('Data (YYYY-MM-DD):', format(parseISO(goal.date), 'yyyy-MM-dd'));
-    if (dateInput === null) return;
-    const categoryInput = prompt('Categoria (Trabalho, Pessoal, Saúde, Estudos, Outros):', goal.category);
-    if (categoryInput === null) return;
-    const isDaily = confirm('Marcar como diário?');
-
-    setGoals(goals.map(g => g.id === goal.id ? {
-      ...g,
-      title: trimmedTitle,
-      date: (dateInput.trim() || format(parseISO(goal.date), 'yyyy-MM-dd')) + 'T12:00:00',
-      category: (categoryInput.trim() as Category) || goal.category,
-      isDaily
-    } : g));
+  const statsTasks = {
+    total: tasks.length,
+    completed: tasks.filter(t => t.completed).length,
+    pending: tasks.length - tasks.filter(t => t.completed).length,
+    rate: tasks.length ? ((tasks.filter(t => t.completed).length / tasks.length) * 100).toFixed(0) : '0'
   };
 
-  const editTask = (task: Task) => {
-    const title = prompt('Editar tarefa (título):', task.title);
-    if (title === null) return;
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
-    const dateInput = prompt('Data (YYYY-MM-DD):', format(parseISO(task.scheduledDate), 'yyyy-MM-dd'));
-    if (dateInput === null) return;
-    const categoryInput = prompt('Categoria (Trabalho, Pessoal, Saúde, Estudos, Outros):', task.category ?? 'Outros');
-    if (categoryInput === null) return;
-    const isDaily = confirm('Marcar como diário?');
+  useEffect(() => {
+    if (!editingGoal) {
+      setGoalDraft(null);
+      return;
+    }
+    setGoalDraft({
+      title: editingGoal.title,
+      date: format(parseISO(editingGoal.date), 'yyyy-MM-dd'),
+      category: editingGoal.category,
+      priority: editingGoal.priority,
+      isDaily: !!editingGoal.isDaily,
+      description: editingGoal.description ?? ''
+    });
+  }, [editingGoal]);
 
-    setTasks(tasks.map(t => t.id === task.id ? {
-      ...t,
-      title: trimmedTitle,
-      scheduledDate: (dateInput.trim() || format(parseISO(task.scheduledDate), 'yyyy-MM-dd')) + 'T12:00:00',
-      category: (categoryInput.trim() as Category) || task.category,
-      isDaily
-    } : t));
-  };
+  useEffect(() => {
+    if (!editingTask) {
+      setTaskDraft(null);
+      return;
+    }
+    setTaskDraft({
+      title: editingTask.title,
+      date: format(parseISO(editingTask.scheduledDate), 'yyyy-MM-dd'),
+      category: editingTask.category ?? 'Outros',
+      isDaily: !!editingTask.isDaily
+    });
+  }, [editingTask]);
+
+  const isGoalsPath = location.pathname === '/' || location.pathname === '/metas';
+  const isTasksPath = location.pathname === '/tarefas';
+  const isChecklistGoalsPath = location.pathname === '/checklist-metas';
+  const isChecklistTasksPath = location.pathname === '/checklist-tarefas';
+  const isChecklistView = isChecklistGoalsPath || isChecklistTasksPath;
 
   const weeklyStats = useMemo(() => {
     const days = Array.from({ length: 7 }).map((_, index) => subDays(new Date(), 6 - index));
@@ -284,82 +284,6 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
   const categoryItems = useMemo(() => [...goals, ...tasks], [goals, tasks]);
 
-  const isPascoto = user.username === 'pascoto';
-  const companies: Project['company'][] = ['Empório Pascoto', 'Pascoto100k'];
-  const strategyTypes: StrategyBlockType[] = ['vendas', 'financeiro', 'operacional', 'estrategico', 'funil', 'ads', 'lp', 'email', 'checkout', 'nota'];
-
-  const getCompanyProjects = (company: Project['company']) =>
-    projects.filter(p => p.company === company).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-
-  const getProjectBlocks = (projectId: string) =>
-    blocks
-      .filter(b => b.projectId === projectId)
-      .sort((a, b) => a.order - b.order);
-
-  const getProjectEdges = (projectId: string) =>
-    edges.filter(e => e.projectId === projectId);
-
-  const addBlockToProject = (
-    projectId: string,
-    payload: Pick<StrategyBlock, 'title' | 'description' | 'type'>,
-    position?: { x: number; y: number }
-  ) => {
-    setBlocks(prev => {
-      const existing = prev.filter(b => b.projectId === projectId).sort((a, b) => a.order - b.order);
-      const nextIndex = existing.length + 1;
-      const fallbackPosition = existing.length
-        ? { x: (existing[0].position?.x ?? 120) + nextIndex * 20, y: (existing[0].position?.y ?? 120) + nextIndex * 20 }
-        : { x: 120, y: 120 };
-      return [
-        {
-          id: crypto.randomUUID(),
-          title: payload.title,
-          description: payload.description,
-          type: payload.type,
-          order: nextIndex,
-          projectId,
-          position: position ?? fallbackPosition
-        },
-        ...prev
-      ];
-    });
-  };
-
-  const addTemplateFunnel = (projectId: string) => {
-    const baseX = 80;
-    const baseY = 80;
-    const templateBlocks: StrategyBlock[] = [
-      { id: crypto.randomUUID(), title: 'Atrair', description: 'Anúncios + Conteúdo', type: 'ads', order: 1, projectId, position: { x: baseX, y: baseY } },
-      { id: crypto.randomUUID(), title: 'Capturar', description: 'Landing Page', type: 'lp', order: 2, projectId, position: { x: baseX + 240, y: baseY } },
-      { id: crypto.randomUUID(), title: 'Nutrir', description: 'Sequência de e-mails', type: 'email', order: 3, projectId, position: { x: baseX + 480, y: baseY } },
-      { id: crypto.randomUUID(), title: 'Converter', description: 'Checkout + Oferta', type: 'checkout', order: 4, projectId, position: { x: baseX + 720, y: baseY } }
-    ];
-    const templateEdges: StrategyEdge[] = [
-      { id: crypto.randomUUID(), source: templateBlocks[0].id, target: templateBlocks[1].id, projectId },
-      { id: crypto.randomUUID(), source: templateBlocks[1].id, target: templateBlocks[2].id, projectId },
-      { id: crypto.randomUUID(), source: templateBlocks[2].id, target: templateBlocks[3].id, projectId }
-    ];
-    setBlocks(prev => [...templateBlocks, ...prev]);
-    setEdges(prev => [...templateEdges, ...prev]);
-  };
-
-  const addTemplateStructure = (projectId: string) => {
-    const baseX = 80;
-    const baseY = 80;
-    const templateBlocks: StrategyBlock[] = [
-      { id: crypto.randomUUID(), title: 'Vendas', description: 'Processo comercial', type: 'vendas', order: 1, projectId, position: { x: baseX, y: baseY } },
-      { id: crypto.randomUUID(), title: 'Operacional', description: 'Entrega & execução', type: 'operacional', order: 2, projectId, position: { x: baseX, y: baseY + 180 } },
-      { id: crypto.randomUUID(), title: 'Financeiro', description: 'Fluxo de caixa', type: 'financeiro', order: 3, projectId, position: { x: baseX + 260, y: baseY } },
-      { id: crypto.randomUUID(), title: 'Estratégico', description: 'OKRs e metas', type: 'estrategico', order: 4, projectId, position: { x: baseX + 260, y: baseY + 180 } }
-    ];
-    const templateEdges: StrategyEdge[] = [
-      { id: crypto.randomUUID(), source: templateBlocks[0].id, target: templateBlocks[2].id, projectId },
-      { id: crypto.randomUUID(), source: templateBlocks[1].id, target: templateBlocks[3].id, projectId }
-    ];
-    setBlocks(prev => [...templateBlocks, ...prev]);
-    setEdges(prev => [...templateEdges, ...prev]);
-  };
-
   const Sidebar = () => (
     <aside className={`w-72 flex flex-col h-full ${isFem ? 'bg-white border-r border-rose-100' : 'bg-black border-r border-zinc-900'}`}>
       <div className="p-12 text-center">
@@ -369,17 +293,18 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         </h1>
       </div>
       <nav className="flex-1 px-6 space-y-3">
-        <Link to="/" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/' ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
-          <LayoutDashboard className="w-4 h-4" /> Painel Geral
+        <Link to="/metas" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isGoalsPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
+          <Target className="w-4 h-4" /> Dashboard Metas
         </Link>
-        <Link to="/checklist" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/checklist' ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
-          <ClipboardList className="w-4 h-4" /> Checklist
+        <Link to="/tarefas" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isTasksPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
+          <ClipboardList className="w-4 h-4" /> Dashboard Tarefas
         </Link>
-        {isPascoto && (
-          <Link to="/strategy" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${location.pathname === '/strategy' ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
-            <Sparkles className="w-4 h-4" /> Estratégia
-          </Link>
-        )}
+        <Link to="/checklist-metas" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isChecklistGoalsPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
+          <CheckCircle2 className="w-4 h-4" /> Checklist Metas
+        </Link>
+        <Link to="/checklist-tarefas" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${isChecklistTasksPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')}`}>
+          <CheckCircle2 className="w-4 h-4" /> Checklist Tarefas
+        </Link>
       </nav>
       <div className="p-10 border-t border-rose-100">
         <button onClick={onLogout} className={`flex items-center gap-3 text-[10px] font-black uppercase transition-all ${isFem ? 'text-rose-400 hover:text-rose-700' : 'text-zinc-700 hover:text-white'}`}>
@@ -395,11 +320,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       <div className={`lg:hidden fixed top-0 left-0 right-0 z-50 p-5 border-b flex justify-between items-center backdrop-blur-xl ${isFem ? 'bg-white/80 border-rose-100 text-rose-700' : 'bg-black/80 border-zinc-900 text-white'}`}>
         <button onClick={() => setIsSidebarOpen(true)}><Menu className="w-6 h-6" /></button>
         <span className="font-black italic uppercase text-[10px] tracking-widest">
-          {location.pathname === '/checklist'
-            ? 'CHECKLIST'
-            : location.pathname === '/strategy'
-              ? 'ESTRATÉGIA'
-              : `${isFem ? 'YASMIN' : user.name} FOCO`}
+          {isChecklistGoalsPath
+            ? 'CHECKLIST METAS'
+            : isChecklistTasksPath
+              ? 'CHECKLIST TAREFAS'
+              : isTasksPath
+                ? 'DASHBOARD TAREFAS'
+                : 'DASHBOARD METAS'}
         </span>
         <div className="w-6 h-6" />
       </div>
@@ -424,27 +351,27 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           )}
 
           {/* HEADER SECTION */}
-          {location.pathname !== '/strategy' && (
           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
             <div>
               <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
-                {location.pathname === '/strategy'
-                  ? 'Estratégia Empresarial'
-                  : location.pathname === '/checklist'
-                    ? 'Checklist Diário'
-                    : 'Painel de Controle'}
+                {isChecklistGoalsPath
+                  ? 'Checklist de Metas'
+                  : isChecklistTasksPath
+                    ? 'Checklist de Tarefas'
+                    : isTasksPath
+                      ? 'Dashboard de Tarefas'
+                      : 'Dashboard de Metas'}
               </h2>
               <p className={`text-[10px] font-black uppercase tracking-[0.5em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
-                {location.pathname === '/strategy'
-                  ? 'Empório Pascoto • Pascoto100k'
-                  : location.pathname === '/checklist'
-                    ? 'Execução • Registros do Dia'
-                    : 'Protocolo Ativo • Sincronizado'}
+                {isChecklistView
+                  ? 'Execução • Registros do Dia'
+                  : isTasksPath
+                    ? 'Produtividade • Execução Tática'
+                    : 'Foco • Metas Estratégicas'}
               </p>
             </div>
             
             {/* GLOBAL FILTER BAR */}
-            {location.pathname !== '/strategy' && (
             <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-2 rounded-[2.5rem] w-full sm:w-auto ${isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-100' : 'bg-zinc-900 border border-zinc-800'}`}>
               <div className="flex gap-1 p-1">
                 {(['HOJE', 'ONTEM'] as const).map(tab => (
@@ -497,283 +424,12 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 </select>
               </div>
             </div>
-            )}
           </div>
-          )}
 
-          {location.pathname !== '/checklist' && location.pathname !== '/strategy' && (
+          {location.pathname !== '/checklist' && (
             <DashboardHeader {...stats} theme={user.theme} />
           )}
-
-          {location.pathname === '/strategy' ? (
-            <div className="space-y-12">
-              {!isPascoto ? (
-                <div className={`p-10 rounded-[3rem] text-center text-[10px] font-black uppercase tracking-[0.4em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
-                  Acesso restrito ao Pascoto
-                </div>
-              ) : (
-                <div className="space-y-10">
-                  {!activeCompany ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
-                      {companies.map(company => (
-                        <button
-                          key={company}
-                          onClick={() => setActiveCompany(company)}
-                          className={`p-8 sm:p-12 rounded-[3.5rem] text-left border transition-all hover:-translate-y-1 ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20 text-rose-800' : 'bg-zinc-900/40 border-zinc-800 text-white'}`}
-                        >
-                          <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-60">Acesso</div>
-                          <div className="text-2xl sm:text-3xl font-black italic uppercase mt-4">{company}</div>
-                          <div className={`text-[9px] font-black uppercase tracking-[0.3em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>Abrir workspace</div>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <section className={`space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                        <div>
-                          <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>{activeCompany}</h3>
-                          <p className={`text-[10px] font-black uppercase tracking-[0.3em] mt-2 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Funis e Estruturas Estratégicas</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => setActiveCompany(null)}
-                            className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
-                          >
-                            Voltar
-                          </button>
-                        </div>
-                      </div>
-
-                      <form
-                        onSubmit={e => {
-                          e.preventDefault();
-                          const f = new FormData(e.currentTarget);
-                          const title = (f.get('title') as string)?.trim();
-                          const type = (f.get('type') as 'funil' | 'estrutura') || 'funil';
-                          if (!title) return;
-                          const projectId = crypto.randomUUID();
-                          setProjects([
-                            {
-                              id: projectId,
-                              title,
-                              type,
-                              createdAt: new Date().toISOString(),
-                              company: activeCompany
-                            },
-                            ...projects
-                          ]);
-                          addBlockToProject(projectId, {
-                            title: type === 'funil' ? 'Início do Funil' : 'Base da Estrutura',
-                            description: 'Defina o primeiro passo',
-                            type: type === 'funil' ? 'funil' : 'estrategico'
-                          });
-                          e.currentTarget.reset();
-                        }}
-                        className="flex flex-col lg:flex-row gap-3"
-                      >
-                        <input
-                          name="title"
-                          required
-                          placeholder="Nome do funil ou estrutura"
-                          className={`flex-1 p-4 sm:p-5 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 focus:bg-white border border-transparent focus:border-rose-200' : 'bg-black border border-zinc-800'}`}
-                        />
-                        <select
-                          name="type"
-                          className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
-                        >
-                          <option value="funil">Funil</option>
-                          <option value="estrutura">Estrutura</option>
-                        </select>
-                        <button type="submit" className={`p-4 sm:p-5 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
-                          <Plus className="w-6 h-6" />
-                        </button>
-                      </form>
-
-                      <div className="space-y-6">
-                        {getCompanyProjects(activeCompany).map(project => (
-                          <div key={project.id} className={`p-5 sm:p-6 lg:p-6 rounded-[3rem] border ${isFem ? 'bg-rose-50/40 border-rose-100' : 'bg-black border-zinc-800'}`}>
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <div>
-                                <h4 className={`text-xl font-black uppercase ${isFem ? 'text-rose-800' : 'text-white'}`}>{project.title}</h4>
-                                <span className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>{project.type}</span>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  setProjects(projects.filter(p => p.id !== project.id));
-                                  setBlocks(blocks.filter(b => b.projectId !== project.id));
-                                  setEdges(edges.filter(e => e.projectId !== project.id));
-                                }}
-                                className={`text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-red-400'}`}
-                              >
-                                Remover
-                              </button>
-                            </div>
-
-                            <div className="mt-6 space-y-4">
-                              <div className="flex flex-wrap gap-2">
-                                <button
-                                  onClick={() => addTemplateFunnel(project.id)}
-                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
-                                >
-                                  Template Funil
-                                </button>
-                                <button
-                                  onClick={() => addTemplateStructure(project.id)}
-                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}
-                                >
-                                  Template Estrutura
-                                </button>
-                                <button
-                                  onClick={() => addBlockToProject(project.id, { title: 'Nova Etapa', description: 'Defina a ação', type: 'funil' })}
-                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                                >
-                                  Adicionar Etapa
-                                </button>
-                                <button
-                                  onClick={() => addBlockToProject(project.id, { title: 'Nota Estratégica', description: 'Insight rápido', type: 'nota' })}
-                                  className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                                >
-                                  Adicionar Nota
-                                </button>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                <div className={`px-3 py-2 rounded-2xl text-[8px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-600' : 'bg-zinc-900 text-zinc-400'}`}>
-                                  Arraste itens para o quadro
-                                </div>
-                                {(['funil','ads','lp','email','checkout','vendas','operacional','financeiro','estrategico','nota'] as StrategyBlockType[]).map(item => (
-                                  <div
-                                    key={item}
-                                    draggable
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.setData('application/strategy-node', item);
-                                      e.dataTransfer.setData('text/plain', item);
-                                      e.dataTransfer.effectAllowed = 'move';
-                                    }}
-                                    className={`px-3 py-2 rounded-2xl text-[8px] font-black uppercase tracking-[0.3em] cursor-grab ${isFem ? 'bg-white text-rose-600 border border-rose-200' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                                  >
-                                    {item}
-                                  </div>
-                                ))}
-                              </div>
-                                <StrategyFlow
-                                blocks={getProjectBlocks(project.id)}
-                                edges={getProjectEdges(project.id)}
-                                theme={user.theme}
-                                  onEditNode={(nodeId) => {
-                                  const target = blocks.find(b => b.id === nodeId);
-                                  if (!target) return;
-                                  const title = prompt('Título do elemento:', target.title);
-                                  if (title === null) return;
-                                  const description = prompt('Descrição rápida:', target.description);
-                                  if (description === null) return;
-                                  setBlocks(blocks.map(b => b.id === nodeId ? { ...b, title: title.trim() || b.title, description: description.trim() || b.description } : b));
-                                }}
-                                  onDuplicateNode={(nodeId) => {
-                                    const target = blocks.find(b => b.id === nodeId);
-                                    if (!target) return;
-                                    setBlocks([
-                                      {
-                                        ...target,
-                                        id: crypto.randomUUID(),
-                                        title: `${target.title} (Cópia)`,
-                                        position: target.position ? { x: target.position.x + 30, y: target.position.y + 30 } : undefined
-                                      },
-                                      ...blocks
-                                    ]);
-                                  }}
-                                onBlocksChange={(updatedBlocks) => {
-                                  setBlocks([
-                                    ...blocks.filter(b => b.projectId !== project.id),
-                                    ...updatedBlocks
-                                  ]);
-                                }}
-                                onEdgesChange={(updatedEdges) => {
-                                  setEdges([
-                                    ...edges.filter(e => e.projectId !== project.id),
-                                    ...updatedEdges.map(e => ({ ...e, projectId: project.id }))
-                                  ]);
-                                }}
-                                onAddNode={(position, nodeType) => {
-                                  const type = (nodeType as StrategyBlockType) || 'funil';
-                                  const defaultTitle = type === 'nota' ? 'Nota' : 'Nova Etapa';
-                                  const defaultDesc = type === 'nota' ? 'Insight rápido' : 'Defina a ação';
-                                  addBlockToProject(project.id, {
-                                    title: defaultTitle,
-                                    description: defaultDesc,
-                                    type
-                                  }, position);
-                                }}
-                              />
-                              {getProjectBlocks(project.id).length === 0 && (
-                                <div className="text-center space-y-3">
-                                  <div className="text-[9px] font-black uppercase tracking-[0.4em] opacity-60">
-                                    Duplo clique no quadro para criar um bloco
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            <form
-                              onSubmit={e => {
-                                e.preventDefault();
-                                const f = new FormData(e.currentTarget);
-                                const title = (f.get('title') as string)?.trim();
-                                const description = (f.get('description') as string)?.trim();
-                                const type = (f.get('type') as StrategyBlockType) || 'estrategico';
-                                if (!title) return;
-                                const currentCount = getProjectBlocks(project.id).length;
-                                setBlocks([
-                                  {
-                                    id: crypto.randomUUID(),
-                                    title,
-                                    description: description || 'Sem descrição',
-                                    type,
-                                    order: currentCount + 1,
-                                    projectId: project.id
-                                  },
-                                  ...blocks
-                                ]);
-                                e.currentTarget.reset();
-                              }}
-                              className="mt-6 grid grid-cols-1 lg:grid-cols-[1.2fr,0.8fr,1.4fr,auto] gap-3"
-                            >
-                              <input
-                                name="title"
-                                required
-                                placeholder="Elemento estratégico"
-                                className={`p-4 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-white text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800'}`}
-                              />
-                              <select
-                                name="type"
-                                className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-white text-rose-600 border border-rose-100' : 'bg-black text-zinc-600 border border-zinc-800'}`}
-                              >
-                                {strategyTypes.map(t => (
-                                  <option key={t} value={t}>{t}</option>
-                                ))}
-                              </select>
-                              <input
-                                name="description"
-                                placeholder="Descrição rápida"
-                                className={`p-4 rounded-[2rem] text-xs font-bold uppercase outline-none transition-all ${isFem ? 'bg-white text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800'}`}
-                              />
-                              <button type="submit" className={`p-4 rounded-[2rem] text-white shadow-xl active:scale-90 transition-all ${isFem ? 'bg-rose-600 shadow-rose-300' : 'bg-blue-600'}`}>
-                                <Plus className="w-5 h-5" />
-                              </button>
-                            </form>
-                          </div>
-                        ))}
-                        {getCompanyProjects(activeCompany).length === 0 && (
-                          <div className="text-center py-10 opacity-30">
-                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Nenhum funil/estrutura criado</p>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : location.pathname === '/checklist' ? (
+          {location.pathname === '/checklist' ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
               {/* --- CHECKLIST METAS --- */}
               <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
@@ -867,6 +523,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             
             {/* --- DASHBOARD DE METAS --- */}
+            {isGoalsPath && (
             <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
@@ -944,7 +601,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     theme={user.theme}
                     onToggle={() => setGoals(goals.map(x => x.id === g.id ? {...x, completed: !x.completed} : x))}
                     onDelete={() => setGoals(goals.filter(x => x.id !== g.id))}
-                    onEdit={() => editGoal(g)}
+                    onEdit={() => setEditingGoal(g)}
                   />
                 ))}
                 {currentGoals.length === 0 && (
@@ -955,8 +612,10 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 )}
               </div>
             </section>
+            )}
 
             {/* --- DASHBOARD DE TAREFAS --- */}
+            {isTasksPath && (
             <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
@@ -1035,7 +694,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
                     onToggle={() => setTasks(tasks.map(x => x.id === t.id ? {...x, completed: !x.completed} : x))}
                     onDelete={() => setTasks(tasks.filter(x => x.id !== t.id))}
-                    onEdit={() => editTask(t)}
+                    onEdit={() => setEditingTask(t)}
                   />
                 ))}
                 {currentTasks.length === 0 && (
@@ -1046,9 +705,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 )}
               </div>
             </section>
+            )}
           </div>
 
           {/* --- LEMBRETES (NOTES) --- */}
+          {!isChecklistView && (
           <section className="space-y-10">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-2xl ${isFem ? 'bg-rose-600 shadow-lg shadow-rose-300' : 'bg-zinc-900'}`}>
@@ -1066,6 +727,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   <button onClick={() => setNotes(notes.filter((_, i) => i !== idx))} className="absolute top-6 right-6 text-rose-200 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-all">
                     <X className="w-5 h-5" />
                   </button>
+                  <button
+                    onClick={() => {
+                      setEditingNoteIndex(idx);
+                      setEditingNoteText(note);
+                    }}
+                    className={`absolute top-6 left-6 opacity-0 group-hover:opacity-100 transition-all ${isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-600 hover:text-blue-400'}`}
+                  >
+                    <Edit3 className="w-5 h-5" />
+                  </button>
                   <p className="text-xs font-bold leading-relaxed uppercase tracking-wider">{note}</p>
                 </div>
               ))}
@@ -1078,8 +748,10 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               </button>
             </div>
           </section>
+          )}
 
           {/* ANALYTICS SECTION */}
+          {!isChecklistView && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
             <WeeklyChart 
               data={weeklyStats}
@@ -1087,11 +759,232 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             />
             <CategoryChart items={categoryItems} />
           </div>
+          )}
           </>
           )}
 
         </div>
       </main>
+
+      {editingGoal && goalDraft && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setEditingGoal(null)} />
+          <div className={`relative w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-8 border ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Meta</h3>
+              <button onClick={() => setEditingGoal(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setGoals(goals.map(g => g.id === editingGoal.id ? {
+                  ...g,
+                  title: goalDraft.title.trim() || g.title,
+                  date: (goalDraft.date || format(parseISO(g.date), 'yyyy-MM-dd')) + 'T12:00:00',
+                  category: goalDraft.category,
+                  priority: goalDraft.priority,
+                  isDaily: goalDraft.isDaily,
+                  description: goalDraft.description.trim()
+                } : g));
+                setEditingGoal(null);
+              }}
+              className="space-y-4"
+            >
+              <input
+                value={goalDraft.title}
+                onChange={(e) => setGoalDraft({ ...goalDraft, title: e.target.value })}
+                placeholder="Título da meta"
+                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="date"
+                  value={goalDraft.date}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, date: e.target.value })}
+                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                />
+                <select
+                  value={goalDraft.category}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, category: e.target.value as Category })}
+                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                >
+                  <option value="Trabalho">Trabalho</option>
+                  <option value="Pessoal">Pessoal</option>
+                  <option value="Saúde">Saúde</option>
+                  <option value="Estudos">Estudos</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select
+                  value={goalDraft.priority}
+                  onChange={(e) => setGoalDraft({ ...goalDraft, priority: e.target.value as Priority })}
+                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                >
+                  <option value={Priority.LOW}>Baixa</option>
+                  <option value={Priority.MEDIUM}>Média</option>
+                  <option value={Priority.HIGH}>Alta</option>
+                </select>
+                <label className={`flex items-center justify-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}>
+                  <input
+                    type="checkbox"
+                    checked={goalDraft.isDaily}
+                    onChange={(e) => setGoalDraft({ ...goalDraft, isDaily: e.target.checked })}
+                    className="accent-rose-500"
+                  />
+                  Todos os dias
+                </label>
+              </div>
+              <textarea
+                value={goalDraft.description}
+                onChange={(e) => setGoalDraft({ ...goalDraft, description: e.target.value })}
+                placeholder="Descrição rápida"
+                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none min-h-[120px] ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
+              />
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingGoal(null)}
+                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-800 text-zinc-300'}`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-600 text-white shadow-rose-300/60' : 'bg-blue-600 text-white'}`}
+                >
+                  Salvar alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingTask && taskDraft && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setEditingTask(null)} />
+          <div className={`relative w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-8 border ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Tarefa</h3>
+              <button onClick={() => setEditingTask(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setTasks(tasks.map(t => t.id === editingTask.id ? {
+                  ...t,
+                  title: taskDraft.title.trim() || t.title,
+                  scheduledDate: (taskDraft.date || format(parseISO(t.scheduledDate), 'yyyy-MM-dd')) + 'T12:00:00',
+                  category: taskDraft.category,
+                  isDaily: taskDraft.isDaily
+                } : t));
+                setEditingTask(null);
+              }}
+              className="space-y-4"
+            >
+              <input
+                value={taskDraft.title}
+                onChange={(e) => setTaskDraft({ ...taskDraft, title: e.target.value })}
+                placeholder="Título da tarefa"
+                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="date"
+                  value={taskDraft.date}
+                  onChange={(e) => setTaskDraft({ ...taskDraft, date: e.target.value })}
+                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                />
+                <select
+                  value={taskDraft.category}
+                  onChange={(e) => setTaskDraft({ ...taskDraft, category: e.target.value as Category })}
+                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
+                >
+                  <option value="Trabalho">Trabalho</option>
+                  <option value="Pessoal">Pessoal</option>
+                  <option value="Saúde">Saúde</option>
+                  <option value="Estudos">Estudos</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <label className={`flex items-center justify-center gap-2 px-4 py-3 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}>
+                <input
+                  type="checkbox"
+                  checked={taskDraft.isDaily}
+                  onChange={(e) => setTaskDraft({ ...taskDraft, isDaily: e.target.checked })}
+                  className="accent-rose-500"
+                />
+                Todos os dias
+              </label>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingTask(null)}
+                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-800 text-zinc-300'}`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-600 text-white shadow-rose-300/60' : 'bg-blue-600 text-white'}`}
+                >
+                  Salvar alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingNoteIndex !== null && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setEditingNoteIndex(null)} />
+          <div className={`relative w-full max-w-xl rounded-[2.5rem] p-6 sm:p-8 border ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Nota</h3>
+              <button onClick={() => setEditingNoteIndex(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (editingNoteIndex === null) return;
+                setNotes(notes.map((n, i) => i === editingNoteIndex ? editingNoteText.trim() || n : n));
+                setEditingNoteIndex(null);
+              }}
+              className="space-y-4"
+            >
+              <textarea
+                value={editingNoteText}
+                onChange={(e) => setEditingNoteText(e.target.value)}
+                placeholder="Nota"
+                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none min-h-[160px] ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
+              />
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingNoteIndex(null)}
+                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-800 text-zinc-300'}`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-600 text-white shadow-rose-300/60' : 'bg-blue-600 text-white'}`}
+                >
+                  Salvar alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1188,3 +1081,5 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+*/

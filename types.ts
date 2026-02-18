@@ -34,35 +34,6 @@ export interface WeeklyStat {
   total: number;
 }
 
-export type StrategyBlockType = 'vendas' | 'financeiro' | 'operacional' | 'estrategico' | 'funil' | 'ads' | 'lp' | 'email' | 'checkout' | 'nota';
-
-export interface StrategyBlock {
-  id: string;
-  title: string;
-  description: string;
-  type: StrategyBlockType;
-  order: number;
-  projectId: string;
-  position?: { x: number; y: number };
-}
-
-export interface StrategyEdge {
-  id: string;
-  source: string;
-  target: string;
-  projectId: string;
-}
-
-export type ProjectType = 'funil' | 'estrutura';
-
-export interface Project {
-  id: string;
-  title: string;
-  type: ProjectType;
-  createdAt: string;
-  company: 'Empório Pascoto' | 'Pascoto100k';
-}
-
 export type ThemeType = 'masculine' | 'feminine';
 
 export interface User {
