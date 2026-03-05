@@ -9,7 +9,6 @@ import {
   Filter,
   Heart,
   LogOut,
-  Menu,
   Plus,
   Star,
   StickyNote,
@@ -68,7 +67,7 @@ const ChecklistItem: React.FC<{
   const isFem = theme === 'feminine';
   return (
     <div
-      className={`flex items-center gap-4 p-5 rounded-[2rem] transition-all duration-500 border ${
+      className={`flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-[2rem] transition-all duration-500 border touch-bounce ${
         completed
           ? isFem
             ? 'bg-rose-100/20 opacity-40 scale-[0.98]'
@@ -80,7 +79,7 @@ const ChecklistItem: React.FC<{
     >
       <button
         onClick={onToggle}
-        className={`shrink-0 transition-transform active:scale-75 ${
+        className={`shrink-0 transition-transform active:scale-75 p-1 ${
           completed
             ? isFem
               ? 'text-rose-600'
@@ -90,20 +89,20 @@ const ChecklistItem: React.FC<{
               : 'text-zinc-700'
         }`}
       >
-        {completed ? <CheckCircle2 className="w-7 h-7" /> : <Circle className="w-7 h-7" />}
+        {completed ? <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7" /> : <Circle className="w-6 h-6 sm:w-7 sm:h-7" />}
       </button>
       <div className="flex-1 min-w-0 text-left">
         <p
-          className={`text-sm font-bold uppercase tracking-tight truncate ${
+          className={`text-xs sm:text-sm font-bold uppercase tracking-tight truncate ${
             completed ? 'line-through text-rose-300' : isFem ? 'text-zinc-900' : 'text-zinc-200'
           }`}
         >
           {title}
         </p>
-        <div className="flex items-center gap-3 mt-1.5">
+        <div className="flex items-center gap-2 sm:gap-3 mt-1">
           {category && (
             <span
-              className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-full ${
+              className={`text-[7px] sm:text-[8px] font-black uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full ${
                 isFem ? 'bg-rose-100 text-rose-700' : 'bg-blue-900/30 text-blue-400'
               }`}
             >
@@ -111,7 +110,7 @@ const ChecklistItem: React.FC<{
             </span>
           )}
           <span
-            className={`text-[8px] font-black uppercase tracking-widest ${
+            className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${
               isFem ? 'text-rose-400' : 'text-zinc-600'
             }`}
           >
@@ -119,12 +118,12 @@ const ChecklistItem: React.FC<{
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {onEdit && (
           <button
             onClick={onEdit}
-            className={`transition-all hover:scale-110 ${
-              isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-800 hover:text-blue-400'
+            className={`p-2 rounded-xl transition-all active:scale-90 ${
+              isFem ? 'text-rose-200 hover:text-rose-700 active:bg-rose-50' : 'text-zinc-800 hover:text-blue-400 active:bg-zinc-800'
             }`}
           >
             <Edit3 className="w-4 h-4" />
@@ -132,8 +131,8 @@ const ChecklistItem: React.FC<{
         )}
         <button
           onClick={onDelete}
-          className={`transition-all hover:scale-110 ${
-            isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-800 hover:text-rose-500'
+          className={`p-2 rounded-xl transition-all active:scale-90 ${
+            isFem ? 'text-rose-200 hover:text-rose-700 active:bg-rose-50' : 'text-zinc-800 hover:text-rose-500 active:bg-zinc-800'
           }`}
         >
           <Trash2 className="w-4 h-4" />
@@ -333,6 +332,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
   const categoryItems = useMemo(() => [...goals, ...tasks], [goals, tasks]);
 
+  const navItems = [
+    { path: '/metas', label: 'Metas', icon: Target, active: isGoalsPath },
+    { path: '/tarefas', label: 'Tarefas', icon: ClipboardList, active: isTasksPath },
+    { path: '/checklist-metas', label: 'Check Metas', icon: CheckCircle2, active: isChecklistGoalsPath },
+    { path: '/checklist-tarefas', label: 'Check Tarefas', icon: CheckCircle2, active: isChecklistTasksPath },
+  ];
+
   const Sidebar = () => (
     <aside className={`w-72 flex flex-col h-full ${isFem ? 'bg-white border-r border-rose-100' : 'bg-black border-r border-zinc-900'}`}>
       <div className="p-12 text-center">
@@ -342,42 +348,18 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         </h1>
       </div>
       <nav className="flex-1 px-6 space-y-3">
-        <Link
-          to="/metas"
-          onClick={() => setIsSidebarOpen(false)}
-          className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-            isGoalsPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')
-          }`}
-        >
-          <Target className="w-4 h-4" /> Dashboard Metas
-        </Link>
-        <Link
-          to="/tarefas"
-          onClick={() => setIsSidebarOpen(false)}
-          className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-            isTasksPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')
-          }`}
-        >
-          <ClipboardList className="w-4 h-4" /> Dashboard Tarefas
-        </Link>
-        <Link
-          to="/checklist-metas"
-          onClick={() => setIsSidebarOpen(false)}
-          className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-            isChecklistGoalsPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')
-          }`}
-        >
-          <CheckCircle2 className="w-4 h-4" /> Checklist Metas
-        </Link>
-        <Link
-          to="/checklist-tarefas"
-          onClick={() => setIsSidebarOpen(false)}
-          className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-            isChecklistTasksPath ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')
-          }`}
-        >
-          <CheckCircle2 className="w-4 h-4" /> Checklist Tarefas
-        </Link>
+        {navItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            onClick={() => setIsSidebarOpen(false)}
+            className={`flex items-center gap-4 px-8 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+              item.active ? (isFem ? 'bg-rose-600 text-white shadow-2xl shadow-rose-300/30' : 'bg-blue-600 text-white') : (isFem ? 'text-rose-400 hover:bg-rose-50 hover:text-rose-600' : 'text-zinc-600 hover:bg-zinc-900')
+            }`}
+          >
+            <item.icon className="w-4 h-4" /> {item.label}
+          </Link>
+        ))}
       </nav>
       <div className="p-10 border-t border-rose-100">
         <button
@@ -392,68 +374,104 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     </aside>
   );
 
-  return (
-    <div className={`flex min-h-screen ${isFem ? 'bg-[#FFF8F8]' : 'bg-black text-white'}`}>
-      <div className={`lg:hidden fixed top-0 left-0 right-0 z-50 p-5 border-b flex justify-between items-center backdrop-blur-xl ${isFem ? 'bg-white/80 border-rose-100 text-rose-700' : 'bg-black/80 border-zinc-900 text-white'}`}>
-        <button onClick={() => setIsSidebarOpen(true)}>
-          <Menu className="w-6 h-6" />
+  const BottomNav = () => (
+    <nav className={`mobile-bottom-nav lg:hidden ${isFem ? 'mobile-bottom-nav-fem' : 'mobile-bottom-nav-masc'}`}>
+      <div className="flex items-center justify-around px-2 py-2">
+        {navItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-2xl transition-all touch-bounce min-w-[60px] ${
+              item.active
+                ? isFem
+                  ? 'text-rose-600 bg-rose-50'
+                  : 'text-blue-500 bg-blue-500/10'
+                : isFem
+                  ? 'text-rose-300'
+                  : 'text-zinc-600'
+            }`}
+          >
+            <item.icon className={`w-5 h-5 ${item.active ? 'scale-110' : ''} transition-transform`} />
+            <span className="text-[8px] font-black uppercase tracking-wider leading-none">{item.label.split(' ')[0]}</span>
+          </Link>
+        ))}
+        <button
+          onClick={onLogout}
+          className={`flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-2xl transition-all touch-bounce min-w-[60px] ${
+            isFem ? 'text-rose-300' : 'text-zinc-600'
+          }`}
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="text-[8px] font-black uppercase tracking-wider leading-none">Sair</span>
         </button>
-        <span className="font-black italic uppercase text-[10px] tracking-widest">
+      </div>
+    </nav>
+  );
+
+  return (
+    <div className={`flex min-h-screen min-h-[100dvh] ${isFem ? 'bg-[#FFF8F8]' : 'bg-black text-white'}`}>
+      {/* Mobile Top Bar */}
+      <div className={`lg:hidden fixed top-0 left-0 right-0 z-50 mobile-top-bar px-4 py-3 border-b flex justify-between items-center backdrop-blur-xl ${isFem ? 'bg-white/90 border-rose-100 text-rose-700' : 'bg-black/90 border-zinc-900 text-white'}`}>
+        <div className="flex items-center gap-2">
+          {isFem ? <Heart className="w-4 h-4 fill-current text-rose-500" /> : <Zap className="w-4 h-4 text-blue-500" />}
+          <span className="font-black italic uppercase text-[10px] tracking-wider">
+            {isFem ? 'YASMIN' : user.name}
+          </span>
+        </div>
+        <span className="font-black italic uppercase text-[9px] tracking-widest opacity-60">
           {isChecklistGoalsPath
-            ? 'CHECKLIST METAS'
+            ? 'CHECK METAS'
             : isChecklistTasksPath
-              ? 'CHECKLIST TAREFAS'
+              ? 'CHECK TAREFAS'
               : isTasksPath
-                ? 'DASHBOARD TAREFAS'
-                : 'DASHBOARD METAS'}
+                ? 'TAREFAS'
+                : 'METAS'}
         </span>
-        <div className="w-6 h-6" />
+        <div className="w-8" />
       </div>
 
+      {/* Desktop Sidebar */}
       <div className="hidden lg:block sticky top-0 h-screen shrink-0">
         <Sidebar />
       </div>
 
-      {isSidebarOpen && (
-        <div className="fixed inset-0 z-[60] flex">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
-          <div className="relative w-72 h-full animate-in slide-in-from-left duration-500">
-            <Sidebar />
-          </div>
-        </div>
-      )}
+      {/* Mobile Bottom Navigation */}
+      <BottomNav />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto w-full mt-16 lg:mt-0 overflow-x-hidden">
-        <div className="space-y-16 animate-fade-in">
+      <main className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto w-full mt-14 lg:mt-0 overflow-x-hidden main-content-area">
+        <div className="space-y-8 sm:space-y-16 animate-fade-in">
           {isLoading && (
-            <div className={`px-6 py-4 rounded-3xl text-[10px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
+            <div className={`px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
               Sincronizando dados...
             </div>
           )}
 
-          <div className="flex flex-col md:flex-row justify-between items-start gap-8">
-            <div>
-              <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
-                {isChecklistGoalsPath
-                  ? 'Checklist de Metas'
-                  : isChecklistTasksPath
-                    ? 'Checklist de Tarefas'
-                    : isTasksPath
-                      ? 'Dashboard de Tarefas'
-                      : 'Dashboard de Metas'}
-              </h2>
-              <p className={`text-[10px] font-black uppercase tracking-[0.5em] mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
-                {isChecklistView ? 'Execução • Registros do Dia' : isTasksPath ? 'Produtividade • Execução Tática' : 'Foco • Metas Estratégicas'}
-              </p>
+          <div className="flex flex-col gap-4 sm:gap-8">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 sm:gap-8">
+              <div>
+                <h2 className={`text-2xl sm:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
+                  {isChecklistGoalsPath
+                    ? 'Checklist de Metas'
+                    : isChecklistTasksPath
+                      ? 'Checklist de Tarefas'
+                      : isTasksPath
+                        ? 'Dashboard de Tarefas'
+                        : 'Dashboard de Metas'}
+                </h2>
+                <p className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] mt-2 sm:mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
+                  {isChecklistView ? 'Execução • Registros do Dia' : isTasksPath ? 'Produtividade • Execução Tática' : 'Foco • Metas Estratégicas'}
+                </p>
+              </div>
             </div>
 
-            <div className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-2 rounded-[2.5rem] w-full sm:w-auto ${isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-100' : 'bg-zinc-900 border border-zinc-800'}`}>
+            {/* Filter Bar - Mobile Optimized */}
+            <div className={`flex flex-wrap items-center gap-2 p-2 rounded-2xl sm:rounded-[2.5rem] w-full ${isFem ? 'bg-white shadow-xl shadow-rose-200/20 border border-rose-100' : 'bg-zinc-900 border border-zinc-800'}`}>
               <div className="flex gap-1 p-1">
                 {(['HOJE', 'ONTEM'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => handleQuickDateFilter(tab)}
-                    className={`px-4 py-2 rounded-2xl text-[9px] font-black uppercase transition-all ${
+                    className={`px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-[9px] font-black uppercase transition-all touch-bounce ${
                       activeFilterTab === tab
                         ? isFem
                           ? 'bg-rose-600 text-white shadow-lg shadow-rose-300/30'
@@ -467,8 +485,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3 px-4 border-l border-rose-100">
-                <CalendarIcon className={`w-4 h-4 ${isFem ? 'text-rose-300' : 'text-zinc-600'}`} />
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-xl flex-1 min-w-[130px] ${isFem ? 'border border-rose-50' : 'border border-zinc-800'}`}>
+                <CalendarIcon className={`w-3.5 h-3.5 shrink-0 ${isFem ? 'text-rose-300' : 'text-zinc-600'}`} />
                 <input
                   type="date"
                   value={filterDate}
@@ -476,17 +494,17 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     setFilterDate(e.target.value);
                     setActiveFilterTab('OUTRO');
                   }}
-                  className={`bg-transparent text-[10px] font-black uppercase outline-none w-full sm:w-auto ${
+                  className={`bg-transparent text-[10px] font-black uppercase outline-none w-full ${
                     isFem ? 'text-rose-600' : 'text-zinc-400'
                   }`}
                 />
               </div>
-              <div className="flex items-center gap-3 px-4 border-l border-rose-100">
-                <Filter className={`w-4 h-4 ${isFem ? 'text-rose-300' : 'text-zinc-600'}`} />
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-xl flex-1 min-w-[100px] ${isFem ? 'border border-rose-50' : 'border border-zinc-800'}`}>
+                <Filter className={`w-3.5 h-3.5 shrink-0 ${isFem ? 'text-rose-300' : 'text-zinc-600'}`} />
                 <select
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value)}
-                  className={`bg-transparent text-[10px] font-black uppercase outline-none cursor-pointer w-full sm:w-auto ${
+                  className={`bg-transparent text-[10px] font-black uppercase outline-none cursor-pointer w-full ${
                     isFem ? 'text-rose-600' : 'text-zinc-400'
                   }`}
                 >
@@ -498,12 +516,12 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   <option value="Outros">Outros</option>
                 </select>
               </div>
-              <div className="flex items-center gap-3 px-4 border-l border-rose-100">
-                <CheckCircle2 className={`w-4 h-4 ${isFem ? 'text-rose-300' : 'text-zinc-600'}`} />
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-xl flex-1 min-w-[100px] ${isFem ? 'border border-rose-50' : 'border border-zinc-800'}`}>
+                <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isFem ? 'text-rose-300' : 'text-zinc-600'}`} />
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value as 'TODOS' | 'PENDENTES' | 'CONCLUIDOS')}
-                  className={`bg-transparent text-[10px] font-black uppercase outline-none cursor-pointer w-full sm:w-auto ${
+                  className={`bg-transparent text-[10px] font-black uppercase outline-none cursor-pointer w-full ${
                     isFem ? 'text-rose-600' : 'text-zinc-400'
                   }`}
                 >
@@ -520,11 +538,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           )}
 
           {isChecklistGoalsPath ? (
-            <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+            <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
-                  <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Separadas por filtro</p>
+                  <h3 className={`text-lg sm:text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
+                  <p className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Separadas por filtro</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -562,11 +580,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               </div>
             </section>
           ) : isChecklistTasksPath ? (
-            <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+            <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Tarefas do Dia</h3>
-                  <p className={`text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Checklist diário</p>
+                  <h3 className={`text-lg sm:text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Tarefas do Dia</h3>
+                  <p className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest mt-1 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>Checklist diário</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -606,9 +624,9 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             </section>
           ) : (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 lg:gap-12">
                 {isGoalsPath && (
-                  <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                  <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
@@ -723,7 +741,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 )}
 
                 {isTasksPath && (
-                  <section className={`flex flex-col space-y-6 sm:space-y-8 p-5 sm:p-8 lg:p-8 rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                  <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Checklist</h3>
@@ -845,23 +863,23 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
                     {notes.map((note, idx) => (
-                      <div key={idx} className={`p-8 rounded-[3rem] min-h-[160px] relative group border transition-all hover:-translate-y-2 duration-500 ${isFem ? 'bg-white border-rose-100 text-rose-950 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900 border-zinc-800 text-zinc-300'}`}>
+                      <div key={idx} className={`p-5 sm:p-8 rounded-2xl sm:rounded-[3rem] min-h-[120px] sm:min-h-[160px] relative group border transition-all hover:-translate-y-2 duration-500 ${isFem ? 'bg-white border-rose-100 text-rose-950 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900 border-zinc-800 text-zinc-300'}`}>
                         <button
                           onClick={() => {
                             setEditingNoteIndex(idx);
                             setEditingNoteText(note);
                           }}
-                          className={`absolute top-6 left-6 opacity-0 group-hover:opacity-100 transition-all ${isFem ? 'text-rose-200 hover:text-rose-700' : 'text-zinc-600 hover:text-blue-400'}`}
+                          className={`absolute top-4 sm:top-6 left-4 sm:left-6 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all p-1 ${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-blue-400'}`}
                         >
-                          <Edit3 className="w-5 h-5" />
+                          <Edit3 className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <button
                           onClick={() => setNotes(notes.filter((_, i) => i !== idx))}
-                          className="absolute top-6 right-6 text-rose-200 hover:text-rose-700 opacity-0 group-hover:opacity-100 transition-all"
+                          className="absolute top-4 sm:top-6 right-4 sm:right-6 text-rose-200 hover:text-rose-700 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all p-1"
                         >
-                          <X className="w-5 h-5" />
+                          <X className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <p className="text-xs font-bold leading-relaxed uppercase tracking-wider">{note}</p>
                       </div>
@@ -871,21 +889,21 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                         const text = prompt('O que você quer lembrar?');
                         if (text) setNotes([...notes, text]);
                       }}
-                      className={`p-8 rounded-[3.5rem] min-h-[160px] border-2 border-dashed flex flex-col items-center justify-center gap-4 transition-all group ${
+                      className={`p-5 sm:p-8 rounded-2xl sm:rounded-[3.5rem] min-h-[120px] sm:min-h-[160px] border-2 border-dashed flex flex-col items-center justify-center gap-3 sm:gap-4 transition-all group touch-bounce ${
                         isFem
                           ? 'border-rose-200 text-rose-400 hover:border-rose-700 hover:text-rose-800 hover:bg-rose-100/20'
                           : 'border-zinc-800 text-zinc-700 hover:border-zinc-600'
                       }`}
                     >
-                      <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em]">Adicionar Nota</span>
+                      <Plus className="w-6 h-6 sm:w-8 sm:h-8 group-hover:rotate-90 transition-transform" />
+                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]">Adicionar Nota</span>
                     </button>
                   </div>
                 </section>
               )}
 
               {!isChecklistView && (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 lg:gap-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 lg:gap-12">
                   <WeeklyChart data={weeklyStats} title="PERFORMANCE SEMANAL" />
                   <CategoryChart items={categoryItems} />
                 </div>
@@ -896,10 +914,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       </main>
 
       {editingGoal && goalDraft && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setEditingGoal(null)} />
-          <div className={`relative w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-8 border ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditingGoal(null)} />
+          <div className={`relative w-full sm:max-w-2xl rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 border mobile-modal-content-sheet sm:!max-h-none sm:!position-static sm:!rounded-[2.5rem] overflow-y-auto ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
+            <div className="pull-indicator sm:hidden" />
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Meta</h3>
               <button onClick={() => setEditingGoal(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
                 <X className="w-5 h-5" />
@@ -993,10 +1012,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       )}
 
       {editingTask && taskDraft && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setEditingTask(null)} />
-          <div className={`relative w-full max-w-2xl rounded-[2.5rem] p-6 sm:p-8 border ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditingTask(null)} />
+          <div className={`relative w-full sm:max-w-2xl rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 border mobile-modal-content-sheet sm:!max-h-none sm:!position-static sm:!rounded-[2.5rem] overflow-y-auto ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
+            <div className="pull-indicator sm:hidden" />
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Tarefa</h3>
               <button onClick={() => setEditingTask(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
                 <X className="w-5 h-5" />
@@ -1071,10 +1091,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       )}
 
       {editingNoteIndex !== null && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setEditingNoteIndex(null)} />
-          <div className={`relative w-full max-w-xl rounded-[2.5rem] p-6 sm:p-8 border ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditingNoteIndex(null)} />
+          <div className={`relative w-full sm:max-w-xl rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 border mobile-modal-content-sheet sm:!max-h-none sm:!position-static sm:!rounded-[2.5rem] overflow-y-auto ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
+            <div className="pull-indicator sm:hidden" />
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Nota</h3>
               <button onClick={() => setEditingNoteIndex(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
                 <X className="w-5 h-5" />
@@ -1141,20 +1162,20 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-white flex items-center justify-center p-8">
+    <div className="fixed inset-0 bg-white flex items-center justify-center p-6 sm:p-8" style={{ minHeight: '100dvh' }}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-zinc-50 via-white to-white"></div>
-      <div className="relative w-full max-w-md bg-white border border-zinc-100 p-8 sm:p-12 lg:p-16 rounded-[4.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)] space-y-12 sm:space-y-16 text-center">
-        <div className="space-y-6">
-          <div className="w-24 h-24 bg-black rounded-[2.5rem] flex items-center justify-center mx-auto shadow-3xl transform rotate-12 hover:rotate-0 transition-transform duration-500">
-            <Zap className="w-12 h-12 text-white fill-current" />
+      <div className="relative w-full max-w-md bg-white border border-zinc-100 p-6 sm:p-12 lg:p-16 rounded-[3rem] sm:rounded-[4.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.05)] space-y-8 sm:space-y-16 text-center animate-scale-in">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-black rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center mx-auto shadow-3xl transform rotate-12 hover:rotate-0 transition-transform duration-500">
+            <Zap className="w-10 h-10 sm:w-12 sm:h-12 text-white fill-current" />
           </div>
           <div>
-            <h1 className="text-3xl sm:text-4xl font-black italic uppercase tracking-tighter text-black">SISTEMA <span className="text-zinc-300">DE FOCO</span></h1>
-            <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.8em] mt-3">Auth Protocol v5.0</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black italic uppercase tracking-tighter text-black">SISTEMA <span className="text-zinc-300">DE FOCO</span></h1>
+            <p className="text-[9px] sm:text-[10px] font-black uppercase text-zinc-400 tracking-[0.5em] sm:tracking-[0.8em] mt-2 sm:mt-3">Auth Protocol v5.0</p>
           </div>
         </div>
 
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
           <div className="relative group">
             <input
               value={user}
@@ -1163,7 +1184,7 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
                 if (error) setError('');
               }}
               placeholder="IDENTIFICAÇÃO DO USUÁRIO"
-              className="w-full bg-zinc-50 border border-zinc-100 p-6 rounded-3xl font-black uppercase text-zinc-800 focus:bg-white focus:border-black outline-none transition-all placeholder:text-zinc-300 text-center text-xs tracking-widest"
+              className="w-full bg-zinc-50 border border-zinc-100 p-5 sm:p-6 rounded-2xl sm:rounded-3xl font-black uppercase text-zinc-800 focus:bg-white focus:border-black outline-none transition-all placeholder:text-zinc-300 text-center text-xs tracking-widest"
             />
           </div>
           {error && (
@@ -1173,7 +1194,7 @@ const Login: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
           )}
           <button
             type="submit"
-            className="w-full bg-black py-6 rounded-3xl font-black uppercase italic tracking-[0.2em] text-white shadow-2xl hover:bg-zinc-800 active:scale-95 transition-all"
+            className="w-full bg-black py-5 sm:py-6 rounded-2xl sm:rounded-3xl font-black uppercase italic tracking-[0.2em] text-white shadow-2xl hover:bg-zinc-800 active:scale-[0.97] transition-all touch-bounce text-sm sm:text-base"
           >
             Sincronizar Protocolo
           </button>

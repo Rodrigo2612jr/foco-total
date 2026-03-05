@@ -21,53 +21,53 @@ export const DashboardHeader: React.FC<Props> = ({ total, completed, pending, ra
   const iconBg = isFem ? "bg-rose-100" : "bg-black";
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 lg:gap-10">
-      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
+    <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-10">
+      <div className={`${cardBase} p-4 sm:p-7 lg:p-8 rounded-2xl sm:rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-rose-500/5' : 'bg-blue-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
-        <div className="flex items-center justify-between mb-8">
-          <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Mapeado</span>
-          <div className={`p-2.5 ${iconBg} rounded-2xl`}>
-             <Target className={`${isFem ? 'text-rose-600' : 'text-blue-600'} w-5 h-5`} />
+        <div className="flex items-center justify-between mb-4 sm:mb-8">
+          <span className={`${labelText} text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]`}>Mapeado</span>
+          <div className={`p-1.5 sm:p-2.5 ${iconBg} rounded-xl sm:rounded-2xl`}>
+             <Target className={`${isFem ? 'text-rose-600' : 'text-blue-600'} w-4 h-4 sm:w-5 sm:h-5`} />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{total}</div>
-        <p className={`${labelText} text-[10px] font-black uppercase mt-5 tracking-widest`}>Objetivos</p>
+        <div className={`text-3xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{total}</div>
+        <p className={`${labelText} text-[8px] sm:text-[10px] font-black uppercase mt-3 sm:mt-5 tracking-widest`}>Objetivos</p>
       </div>
       
-      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
+      <div className={`${cardBase} p-4 sm:p-7 lg:p-8 rounded-2xl sm:rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-emerald-500/5' : 'bg-emerald-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
-        <div className="flex items-center justify-between mb-8">
-          <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Sucesso</span>
-          <div className={`p-2.5 ${isFem ? 'bg-emerald-100/50' : 'bg-black'} rounded-2xl`}>
-             <CheckCircle className="text-emerald-500 w-5 h-5" />
+        <div className="flex items-center justify-between mb-4 sm:mb-8">
+          <span className={`${labelText} text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]`}>Sucesso</span>
+          <div className={`p-1.5 sm:p-2.5 ${isFem ? 'bg-emerald-100/50' : 'bg-black'} rounded-xl sm:rounded-2xl`}>
+             <CheckCircle className="text-emerald-500 w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{completed}</div>
-        <p className="text-[10px] font-black uppercase text-emerald-500 mt-5 tracking-widest">Executados</p>
+        <div className={`text-3xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{completed}</div>
+        <p className="text-[8px] sm:text-[10px] font-black uppercase text-emerald-500 mt-3 sm:mt-5 tracking-widest">Executados</p>
       </div>
 
-      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
+      <div className={`${cardBase} p-4 sm:p-7 lg:p-8 rounded-2xl sm:rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-rose-500/5' : 'bg-orange-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
-        <div className="flex items-center justify-between mb-8">
-          <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Ação</span>
-          <div className={`p-2.5 ${iconBg} rounded-2xl`}>
-             <Clock className={`${isFem ? 'text-rose-600' : 'text-orange-600'} w-5 h-5`} />
+        <div className="flex items-center justify-between mb-4 sm:mb-8">
+          <span className={`${labelText} text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]`}>Ação</span>
+          <div className={`p-1.5 sm:p-2.5 ${iconBg} rounded-xl sm:rounded-2xl`}>
+             <Clock className={`${isFem ? 'text-rose-600' : 'text-orange-600'} w-4 h-4 sm:w-5 sm:h-5`} />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{pending}</div>
-        <p className={`${isFem ? 'text-rose-600' : 'text-orange-600'} text-[10px] font-black uppercase mt-5 tracking-widest`}>Pendentes</p>
+        <div className={`text-3xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{pending}</div>
+        <p className={`${isFem ? 'text-rose-600' : 'text-orange-600'} text-[8px] sm:text-[10px] font-black uppercase mt-3 sm:mt-5 tracking-widest`}>Pendentes</p>
       </div>
 
-      <div className={`${cardBase} p-5 sm:p-7 lg:p-8 rounded-[3rem] border relative group overflow-hidden`}>
+      <div className={`${cardBase} p-4 sm:p-7 lg:p-8 rounded-2xl sm:rounded-[3rem] border relative group overflow-hidden`}>
         <div className={`absolute -right-4 -top-4 ${isFem ? 'bg-purple-500/5' : 'bg-purple-500/5'} w-24 h-24 rounded-full blur-3xl group-hover:opacity-100 transition-all`}></div>
-        <div className="flex items-center justify-between mb-8">
-          <span className={`${labelText} text-[10px] font-black uppercase tracking-[0.3em]`}>Eficiência</span>
-          <div className={`p-2.5 ${isFem ? 'bg-purple-100/50' : 'bg-black'} rounded-2xl`}>
-             <TrendingUp className="text-purple-500 w-5 h-5" />
+        <div className="flex items-center justify-between mb-4 sm:mb-8">
+          <span className={`${labelText} text-[8px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em]`}>Eficiência</span>
+          <div className={`p-1.5 sm:p-2.5 ${isFem ? 'bg-purple-100/50' : 'bg-black'} rounded-xl sm:rounded-2xl`}>
+             <TrendingUp className="text-purple-500 w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
-        <div className={`text-4xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{rate}<span className="text-2xl ml-1">%</span></div>
-        <p className="text-[10px] font-black uppercase text-purple-500 mt-5 tracking-widest">Taxa de Foco</p>
+        <div className={`text-3xl sm:text-5xl lg:text-5xl font-black ${valueText} italic tracking-tighter leading-none`}>{rate}<span className="text-xl sm:text-2xl ml-1">%</span></div>
+        <p className="text-[8px] sm:text-[10px] font-black uppercase text-purple-500 mt-3 sm:mt-5 tracking-widest">Taxa de Foco</p>
       </div>
     </div>
   );
