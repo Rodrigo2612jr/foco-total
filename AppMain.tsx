@@ -569,7 +569,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       {/* Mobile Bottom Navigation */}
       <BottomNav />
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-12 max-w-7xl mx-auto w-full mt-14 lg:mt-0 overflow-x-hidden main-content-area">
+      <main className="flex-1 p-4 sm:p-6 lg:p-10 max-w-[1600px] mx-auto w-full mt-14 lg:mt-0 overflow-x-hidden main-content-area">
         <div className="space-y-8 sm:space-y-16 animate-fade-in">
           {isLoading && (
             <div className={`px-4 sm:px-6 py-3 sm:py-4 rounded-2xl sm:rounded-3xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-900 text-zinc-300'}`}>
@@ -688,7 +688,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               onShowUndoToast={showUndo}
             />
           ) : isChecklistGoalsPath ? (
-            <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+            <section className={`w-full flex flex-col space-y-4 sm:space-y-8 p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[3rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className={`text-lg sm:text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
@@ -738,7 +738,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               categories={categories}
               onToggle={(id) => setTasks(tasks.map((x) => (x.id === id ? { ...x, completed: !x.completed } : x)))}
             />
-            <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+            <section className={`w-full flex flex-col space-y-4 sm:space-y-8 p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[3rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className={`text-lg sm:text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Tarefas do Dia</h3>
@@ -794,9 +794,9 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 />
               )}
               {/* Uma única seção ativa por vez (/metas OU /tarefas) — layout em largura total */}
-              <div className="grid grid-cols-1 gap-4 sm:gap-8 lg:gap-12">
+              <div className="w-full grid grid-cols-1 gap-4 sm:gap-8 lg:gap-12">
                 {isGoalsPath && (
-                  <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                  <section className={`w-full flex flex-col space-y-4 sm:space-y-8 p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[3rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Metas do Dia</h3>
@@ -911,7 +911,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 )}
 
                 {isTasksPath && (
-                  <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
+                  <section className={`w-full flex flex-col space-y-4 sm:space-y-8 p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[3rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className={`text-2xl font-black italic uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Checklist</h3>
