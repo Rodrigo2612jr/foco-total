@@ -3,7 +3,8 @@ import { Check, Copy, MessageCircle, Send, Sparkles, X } from 'lucide-react';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { Task, ThemeType } from '../types';
+import { CheckinConfig, Task, ThemeType } from '../types';
+import { subscribeToPush } from '../services/push';
 
 interface Props {
   theme: ThemeType;
@@ -14,13 +15,7 @@ interface Props {
   reminderHour?: number;
   reminderMinute?: number;
   onClose: () => void;
-  onUpdateConfig: (config: {
-    whatsappRecipient?: string;
-    recipientName?: string;
-    reminderHour?: number;
-    reminderMinute?: number;
-    lastSentDate?: string;
-  }) => void;
+  onUpdateConfig: (config: Partial<CheckinConfig>) => void;
 }
 
 const pctFor = (done: number, total: number) =>
@@ -55,12 +50,29 @@ export const CheckinModal: React.FC<Props> = ({
     const res = await Notification.requestPermission();
     setNotifPerm(res);
     if (res === 'granted') {
+      // Dispara notif de boas-vindas local
       try {
         new Notification('✅ Notificações ativadas!', {
           body: 'Às ' + (reminderHour ?? 18) + ':' + String(reminderMinute ?? 0).padStart(2, '0') + ' eu te aviso pra enviar o check-in.',
           tag: 'welcome-checkin'
         });
       } catch { /* noop */ }
+
+      // Registra push subscription (pra funcionar com app fechado)
+      try {
+        const sub = await subscribeToPush();
+        if (sub && sub.endpoint && sub.keys?.p256dh && sub.keys?.auth) {
+          onUpdateConfig({
+            pushSubscription: {
+              endpoint: sub.endpoint,
+              expirationTime: sub.expirationTime ?? null,
+              keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Push subscribe falhou:', err);
+      }
     }
   };
 

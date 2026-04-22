@@ -83,4 +83,11 @@ export interface CheckinConfig {
   reminderHour?: number;      // hora do dia que destaca o botão (0-23, default: 18)
   reminderMinute?: number;    // minuto do reminder (0-59, default: 0)
   lastSentDate?: string;      // 'yyyy-MM-dd' — pra evitar lembrar 2x no mesmo dia
+  // Subscription pra Web Push (funciona com app fechado).
+  // Estrutura serializada que o backend usa pra mandar push.
+  pushSubscription?: {
+    endpoint: string;
+    expirationTime: number | null;
+    keys: { p256dh: string; auth: string };
+  };
 }
