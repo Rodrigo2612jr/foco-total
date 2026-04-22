@@ -11,6 +11,7 @@ import {
   LogOut,
   Plus,
   Repeat,
+  Send,
   Star,
   StickyNote,
   Target,
@@ -25,6 +26,7 @@ import { ptBR } from 'date-fns/locale';
 import {
   Category,
   CategoryDef,
+  CheckinConfig,
   Goal,
   Priority,
   RecurringGenerationLog,
@@ -40,6 +42,7 @@ import { RecurringTasksPanel } from './components/RecurringTasksPanel';
 import { TodaysRoutineBlock } from './components/TodaysRoutineBlock';
 import { UndoToast, UndoToastData } from './components/UndoToast';
 import { GoalEditModal, NoteEditModal, TaskEditModal } from './components/EditModals';
+import { CheckinModal } from './components/CheckinModal';
 import { db } from './services/firebase';
 import { catchUpRecurringInstances, migrateLegacyIsDaily, toDateKey } from './services/recurringService';
 import { notifyDailyRoutineSummary } from './services/notifications';
@@ -50,7 +53,8 @@ const getEmptyData = () => ({
   notes: [] as string[],
   categories: [] as CategoryDef[],
   recurringTasks: [] as RecurringTask[],
-  recurringGenerationLog: {} as RecurringGenerationLog
+  recurringGenerationLog: {} as RecurringGenerationLog,
+  checkinConfig: {} as CheckinConfig
 });
 
 const loadUserData = async (username: string) => {
@@ -64,6 +68,7 @@ const loadUserData = async (username: string) => {
     categories: CategoryDef[];
     recurringTasks: RecurringTask[];
     recurringGenerationLog: RecurringGenerationLog;
+    checkinConfig: CheckinConfig;
   }>;
   return {
     goals: Array.isArray(data.goals) ? data.goals : [],
@@ -74,7 +79,9 @@ const loadUserData = async (username: string) => {
     recurringGenerationLog:
       data.recurringGenerationLog && typeof data.recurringGenerationLog === 'object'
         ? data.recurringGenerationLog
-        : {}
+        : {},
+    checkinConfig:
+      data.checkinConfig && typeof data.checkinConfig === 'object' ? data.checkinConfig : {}
   };
 };
 
@@ -87,6 +94,7 @@ const saveUserData = async (
     categories: CategoryDef[];
     recurringTasks: RecurringTask[];
     recurringGenerationLog: RecurringGenerationLog;
+    checkinConfig: CheckinConfig;
   }
 ) => {
   const ref = doc(db, 'users', username);
@@ -205,6 +213,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [categories, setCategories] = useState<CategoryDef[]>([]);
   const [recurringTasks, setRecurringTasks] = useState<RecurringTask[]>([]);
   const [recurringGenerationLog, setRecurringGenerationLog] = useState<RecurringGenerationLog>({});
+  const [checkinConfig, setCheckinConfig] = useState<CheckinConfig>({});
+  const [showCheckin, setShowCheckin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [canSave, setCanSave] = useState(false);
   const hasLoadedRef = useRef(false);
@@ -278,6 +288,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setCategories(loaded.categories);
         setRecurringTasks(migratedRecurring);
         setRecurringGenerationLog(updatedLog);
+        setCheckinConfig(loaded.checkinConfig ?? {});
         setCanSave(true);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -305,6 +316,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setCategories([]);
         setRecurringTasks([]);
         setRecurringGenerationLog({});
+        setCheckinConfig({});
         setCanSave(false);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -325,14 +337,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         notes,
         categories,
         recurringTasks,
-        recurringGenerationLog
+        recurringGenerationLog,
+        checkinConfig
       }).catch(() => undefined);
     }, 400);
 
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, user.username, isLoading, canSave]);
+  }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, checkinConfig, user.username, isLoading, canSave]);
 
   const applyFilters = (items: any[], dateKey: string, includeOverdue = false) => {
     const selectedDate = parseISO(filterDate);
@@ -1146,6 +1159,44 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       )}
 
       <UndoToast theme={user.theme} toast={undoToast} onDismiss={() => setUndoToast(null)} />
+
+      {/* Botão flutuante "Check-in" — sempre visível, destaca após 18h */}
+      {(() => {
+        const nowHour = new Date().getHours();
+        const reminderHour = checkinConfig.reminderHour ?? 18;
+        const isReminderTime = nowHour >= reminderHour;
+        return (
+          <button
+            onClick={() => setShowCheckin(true)}
+            title="Gerar check-in do dia"
+            className={`fixed z-[60] right-5 lg:right-8 rounded-full shadow-2xl flex items-center gap-2 px-4 py-3 sm:px-5 sm:py-4 text-white font-black uppercase tracking-widest text-xs transition-all active:scale-95 ${
+              isReminderTime
+                ? 'bg-green-600 hover:bg-green-500 shadow-green-500/50 animate-pulse'
+                : isFem
+                  ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-400/40'
+                  : 'bg-zinc-800 hover:bg-zinc-700 shadow-black/40'
+            }`}
+            style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 1rem))' }}
+          >
+            <Send className="w-4 h-4" />
+            <span className="hidden sm:inline">Check-in</span>
+          </button>
+        );
+      })()}
+
+      {showCheckin && (
+        <CheckinModal
+          theme={user.theme}
+          tasks={tasks}
+          goals={goals}
+          whatsappRecipient={checkinConfig.whatsappRecipient}
+          recipientName={checkinConfig.recipientName}
+          onClose={() => setShowCheckin(false)}
+          onUpdateConfig={(cfg) =>
+            setCheckinConfig((prev) => ({ ...prev, ...cfg }))
+          }
+        />
+      )}
     </div>
   );
 };

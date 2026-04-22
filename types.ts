@@ -75,3 +75,11 @@ export interface User {
 // Log de geração por dia — evita duplicar quando o app é aberto várias vezes.
 // dateKey = 'yyyy-MM-dd'. Valor = array de RecurringTask.id já gerados nesse dia.
 export type RecurringGenerationLog = Record<string, string[]>;
+
+// Configurações do check-in diário (envio pra chefe via WhatsApp).
+export interface CheckinConfig {
+  whatsappRecipient?: string; // telefone com DDI (ex: '+5511988887777')
+  recipientName?: string;     // primeiro nome (ex: 'Bárbara')
+  reminderHour?: number;      // hora do dia que destaca o botão (default: 18)
+  lastSentDate?: string;      // 'yyyy-MM-dd' — pra evitar lembrar 2x no mesmo dia
+}
