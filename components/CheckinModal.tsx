@@ -297,7 +297,28 @@ export const CheckinModal: React.FC<Props> = ({
     const url = phone
       ? `https://wa.me/${phone}?text=${encoded}`
       : `https://wa.me/?text=${encoded}`;
-    window.open(url, '_blank');
+
+    // Copia pro clipboard como backup (caso wa.me trunque o texto)
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(message).catch(() => undefined);
+    }
+
+    // Em PWA standalone mobile, window.open('_blank') abre tela preta porque
+    // o PWA não tem UI de abas. Usamos <a> sintético com target="_blank" —
+    // o SO detecta wa.me como deep link e abre o WhatsApp nativo.
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      // Fallback: navegação direta
+      window.location.href = url;
+    }
+
     // Marca que enviou hoje — o reminder não dispara de novo
     const todayKey = format(new Date(), 'yyyy-MM-dd');
     onUpdateConfig({ lastSentDate: todayKey });
