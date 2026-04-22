@@ -707,7 +707,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 </div>
               </div>
 
-              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4">
                 {currentGoals.map((g) => (
                   <ChecklistItem
                     key={g.id}
@@ -757,7 +757,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 </div>
               </div>
 
-              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-4">
                 {currentTasks.map((t) => (
                   <ChecklistItem
                     key={t.id}
@@ -793,7 +793,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   onToggle={(id) => setTasks(tasks.map((x) => (x.id === id ? { ...x, completed: !x.completed } : x)))}
                 />
               )}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 lg:gap-12">
+              {/* Uma única seção ativa por vez (/metas OU /tarefas) — layout em largura total */}
+              <div className="grid grid-cols-1 gap-4 sm:gap-8 lg:gap-12">
                 {isGoalsPath && (
                   <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
                     <div className="flex justify-between items-center">
@@ -885,7 +886,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       </div>
                     </form>
 
-                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-4">
                       {currentGoals.map((g) => (
                         <ChecklistItem
                           key={g.id}
@@ -994,7 +995,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                       </div>
                     </form>
 
-                    <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div className="space-y-4">
                       {currentTasks.map((t) => (
                         <ChecklistItem
                           key={t.id}
