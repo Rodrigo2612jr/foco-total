@@ -79,7 +79,8 @@ export type RecurringGenerationLog = Record<string, string[]>;
 // Configurações do check-in diário (envio pra chefe via WhatsApp).
 export interface CheckinConfig {
   whatsappRecipient?: string; // telefone com DDI (ex: '+5511988887777')
-  recipientName?: string;     // primeiro nome (ex: 'Bárbara')
-  reminderHour?: number;      // hora do dia que destaca o botão (default: 18)
+  recipientName?: string;     // primeiro nome (ex: 'Camila')
+  reminderHour?: number;      // hora do dia que destaca o botão (0-23, default: 18)
+  reminderMinute?: number;    // minuto do reminder (0-59, default: 0)
   lastSentDate?: string;      // 'yyyy-MM-dd' — pra evitar lembrar 2x no mesmo dia
 }

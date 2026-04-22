@@ -10,9 +10,17 @@ interface Props {
   tasks: Task[];
   goals: { id: string; title: string; completed: boolean; date: string; category?: string }[];
   whatsappRecipient?: string; // telefone com ou sem + (ex: "+5511999999999" ou "11999999999")
-  recipientName?: string; // primeiro nome (ex: "Bárbara")
+  recipientName?: string; // primeiro nome (ex: "Camila")
+  reminderHour?: number;
+  reminderMinute?: number;
   onClose: () => void;
-  onUpdateConfig: (config: { whatsappRecipient?: string; recipientName?: string }) => void;
+  onUpdateConfig: (config: {
+    whatsappRecipient?: string;
+    recipientName?: string;
+    reminderHour?: number;
+    reminderMinute?: number;
+    lastSentDate?: string;
+  }) => void;
 }
 
 const pctFor = (done: number, total: number) =>
@@ -26,6 +34,8 @@ export const CheckinModal: React.FC<Props> = ({
   goals,
   whatsappRecipient,
   recipientName,
+  reminderHour,
+  reminderMinute,
   onClose,
   onUpdateConfig
 }) => {
@@ -34,6 +44,8 @@ export const CheckinModal: React.FC<Props> = ({
   const [showConfig, setShowConfig] = useState(false);
   const [phoneInput, setPhoneInput] = useState(whatsappRecipient ?? '');
   const [nameInput, setNameInput] = useState(recipientName ?? '');
+  const [hourInput, setHourInput] = useState(String(reminderHour ?? 18).padStart(2, '0'));
+  const [minuteInput, setMinuteInput] = useState(String(reminderMinute ?? 0).padStart(2, '0'));
 
   const today = new Date();
   const todayStr = format(today, "dd 'de' MMMM", { locale: ptBR });
@@ -184,6 +196,9 @@ export const CheckinModal: React.FC<Props> = ({
       ? `https://wa.me/${phone}?text=${encoded}`
       : `https://wa.me/?text=${encoded}`;
     window.open(url, '_blank');
+    // Marca que enviou hoje — o reminder não dispara de novo
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
+    onUpdateConfig({ lastSentDate: todayKey });
   };
 
   const handleImproveWithClaude = () => {
@@ -193,9 +208,13 @@ export const CheckinModal: React.FC<Props> = ({
   };
 
   const saveConfig = () => {
+    const h = Math.max(0, Math.min(23, parseInt(hourInput) || 0));
+    const m = Math.max(0, Math.min(59, parseInt(minuteInput) || 0));
     onUpdateConfig({
       whatsappRecipient: phoneInput.trim() || undefined,
-      recipientName: nameInput.trim() || undefined
+      recipientName: nameInput.trim() || undefined,
+      reminderHour: h,
+      reminderMinute: m
     });
     setShowConfig(false);
   };
@@ -265,6 +284,38 @@ export const CheckinModal: React.FC<Props> = ({
             <p className={`text-[10px] ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>
               Ex: +5511988887777 (com DDI 55 Brasil + DDD + número)
             </p>
+
+            <p className={`text-xs font-bold pt-2 ${isFem ? 'text-rose-600' : 'text-zinc-400'}`}>
+              Horário do lembrete automático:
+            </p>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min={0}
+                max={23}
+                value={hourInput}
+                onChange={(e) => setHourInput(e.target.value)}
+                className={`w-20 p-3 rounded-2xl text-sm font-bold text-center outline-none ${
+                  isFem
+                    ? 'bg-rose-50/50 text-rose-900 border border-rose-200 focus:border-rose-400'
+                    : 'bg-black text-white border border-zinc-800 focus:border-zinc-600'
+                }`}
+              />
+              <span className={`font-black ${isFem ? 'text-rose-600' : 'text-zinc-400'}`}>:</span>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                value={minuteInput}
+                onChange={(e) => setMinuteInput(e.target.value)}
+                className={`w-20 p-3 rounded-2xl text-sm font-bold text-center outline-none ${
+                  isFem
+                    ? 'bg-rose-50/50 text-rose-900 border border-rose-200 focus:border-rose-400'
+                    : 'bg-black text-white border border-zinc-800 focus:border-zinc-600'
+                }`}
+              />
+              <span className={`text-xs ${isFem ? 'text-rose-500' : 'text-zinc-500'}`}>(ex: 17 e 40)</span>
+            </div>
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowConfig(false)}

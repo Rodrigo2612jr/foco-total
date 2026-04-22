@@ -244,6 +244,48 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [activeFilterTab, setActiveFilterTab] = useState<'HOJE' | 'ONTEM' | 'OUTRO'>('HOJE');
   const [filterStatus, setFilterStatus] = useState<'TODOS' | 'PENDENTES' | 'CONCLUIDOS'>('TODOS');
 
+  // Reminder automático do Check-in (roda a cada minuto enquanto app tá aberto)
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Pede permissão de notificação na primeira vez (silencioso — se negar, só não notifica)
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => undefined);
+    }
+
+
+    const check = () => {
+      const now = new Date();
+      const reminderH = checkinConfig.reminderHour ?? 18;
+      const reminderM = checkinConfig.reminderMinute ?? 0;
+      const todayKey = format(now, 'yyyy-MM-dd');
+
+      if (checkinConfig.lastSentDate === todayKey) return; // já enviou hoje
+      if (now.getHours() !== reminderH) return;
+      if (now.getMinutes() !== reminderM) return;
+
+      // Notificação local (se permissão concedida)
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification('⏰ Hora do check-in!', {
+            body: checkinConfig.recipientName
+              ? `Sua mensagem pra ${checkinConfig.recipientName} tá pronta. Toque pra enviar.`
+              : 'Sua mensagem tá pronta. Toque pra enviar.',
+            tag: `checkin-${todayKey}`
+          });
+        } catch {
+          // silencioso
+        }
+      }
+      // Abre o modal automaticamente
+      setShowCheckin(true);
+    };
+
+    check();
+    const id = window.setInterval(check, 60000);
+    return () => window.clearInterval(id);
+  }, [checkinConfig, isLoading]);
+
   // Undo toast
   const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
   const showUndo = (data: { message: string; onUndo: () => void }) => {
@@ -1160,15 +1202,18 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
       <UndoToast theme={user.theme} toast={undoToast} onDismiss={() => setUndoToast(null)} />
 
-      {/* Botão flutuante "Check-in" — sempre visível, destaca após 18h */}
+      {/* Botão flutuante "Check-in" — sempre visível, destaca após o horário configurado */}
       {(() => {
-        const nowHour = new Date().getHours();
-        const reminderHour = checkinConfig.reminderHour ?? 18;
-        const isReminderTime = nowHour >= reminderHour;
+        const now = new Date();
+        const nowMin = now.getHours() * 60 + now.getMinutes();
+        const reminderMin = (checkinConfig.reminderHour ?? 18) * 60 + (checkinConfig.reminderMinute ?? 0);
+        const isReminderTime = nowMin >= reminderMin;
+        const hh = String(checkinConfig.reminderHour ?? 18).padStart(2, '0');
+        const mm = String(checkinConfig.reminderMinute ?? 0).padStart(2, '0');
         return (
           <button
             onClick={() => setShowCheckin(true)}
-            title="Gerar check-in do dia"
+            title={`Gerar check-in do dia (lembrete ${hh}:${mm})`}
             className={`fixed z-[60] right-5 lg:right-8 rounded-full shadow-2xl flex items-center gap-2 px-4 py-3 sm:px-5 sm:py-4 text-white font-black uppercase tracking-widest text-xs transition-all active:scale-95 ${
               isReminderTime
                 ? 'bg-green-600 hover:bg-green-500 shadow-green-500/50 animate-pulse'
@@ -1191,6 +1236,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           goals={goals}
           whatsappRecipient={checkinConfig.whatsappRecipient}
           recipientName={checkinConfig.recipientName}
+          reminderHour={checkinConfig.reminderHour}
+          reminderMinute={checkinConfig.reminderMinute}
           onClose={() => setShowCheckin(false)}
           onUpdateConfig={(cfg) =>
             setCheckinConfig((prev) => ({ ...prev, ...cfg }))
