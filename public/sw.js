@@ -1,17 +1,15 @@
-const CACHE_NAME = 'yasmin-foco-v1';
+// v2 — network-first (pega versão nova quando online; cache é fallback offline)
+const CACHE_NAME = 'yasmin-foco-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/index.css',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Playfair+Display:ital,wght@0,900;1,900&display=swap'
+  '/index.css'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {
-        // Some assets may fail, that's ok
-      });
+      return cache.addAll(STATIC_ASSETS).catch(() => undefined);
     })
   );
   self.skipWaiting();
@@ -31,19 +29,21 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network-first strategy for API calls
+  // Só lida com GET (outros métodos não podem ser cacheados)
+  if (event.request.method !== 'GET') return;
+
+  // API do Firestore/Google — network-only (sem cache, evita dados velhos)
   if (event.request.url.includes('firestore') || event.request.url.includes('googleapis')) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Cache-first for static assets
+  // Network-first para TUDO (HTML, JS, CSS, imagens):
+  // Tenta baixar versão fresh → se offline, usa cache como fallback.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
+    fetch(event.request)
+      .then((response) => {
+        // Cacheia respostas OK pra uso offline
         if (response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -51,12 +51,14 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return response;
-      });
-    }).catch(() => {
-      // Fallback for navigation requests
-      if (event.request.mode === 'navigate') {
-        return caches.match('/index.html');
-      }
-    })
+      })
+      .catch(() => {
+        // Offline fallback
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') return caches.match('/index.html');
+          return new Response('', { status: 504 });
+        });
+      })
   );
 });
