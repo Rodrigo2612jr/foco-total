@@ -1212,7 +1212,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         const mm = String(checkinConfig.reminderMinute ?? 0).padStart(2, '0');
         return (
           <button
-            onClick={() => setShowCheckin(true)}
+            onClick={() => {
+              // Pede permissão de notificação na primeira vez (user gesture exigido pelo browser)
+              if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().catch(() => undefined);
+              }
+              setShowCheckin(true);
+            }}
             title={`Gerar check-in do dia (lembrete ${hh}:${mm})`}
             className={`fixed z-[60] right-5 lg:right-8 rounded-full shadow-2xl flex items-center gap-2 px-4 py-3 sm:px-5 sm:py-4 text-white font-black uppercase tracking-widest text-xs transition-all active:scale-95 ${
               isReminderTime

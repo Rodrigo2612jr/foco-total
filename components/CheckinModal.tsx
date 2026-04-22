@@ -46,6 +46,23 @@ export const CheckinModal: React.FC<Props> = ({
   const [nameInput, setNameInput] = useState(recipientName ?? '');
   const [hourInput, setHourInput] = useState(String(reminderHour ?? 18).padStart(2, '0'));
   const [minuteInput, setMinuteInput] = useState(String(reminderMinute ?? 0).padStart(2, '0'));
+  const [notifPerm, setNotifPerm] = useState<NotificationPermission>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
+  );
+
+  const requestNotif = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    const res = await Notification.requestPermission();
+    setNotifPerm(res);
+    if (res === 'granted') {
+      try {
+        new Notification('✅ Notificações ativadas!', {
+          body: 'Às ' + (reminderHour ?? 18) + ':' + String(reminderMinute ?? 0).padStart(2, '0') + ' eu te aviso pra enviar o check-in.',
+          tag: 'welcome-checkin'
+        });
+      } catch { /* noop */ }
+    }
+  };
 
   const today = new Date();
   const todayStr = format(today, "dd 'de' MMMM", { locale: ptBR });
@@ -337,6 +354,37 @@ export const CheckinModal: React.FC<Props> = ({
           </div>
         ) : (
           <>
+            {notifPerm !== 'granted' && (
+              <div
+                className={`rounded-2xl p-3 mb-3 flex items-center justify-between gap-3 border-2 ${
+                  isFem
+                    ? 'bg-amber-50 border-amber-300 text-amber-900'
+                    : 'bg-amber-900/20 border-amber-700 text-amber-200'
+                }`}
+              >
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wider">
+                    {notifPerm === 'denied'
+                      ? '🔕 Notificações bloqueadas'
+                      : '🔔 Ativar notificação do lembrete'}
+                  </p>
+                  <p className="text-[10px] font-bold mt-1 opacity-80">
+                    {notifPerm === 'denied'
+                      ? 'Nas configs do navegador, permita notificações pra esse site.'
+                      : 'Precisa permitir uma vez pro lembrete às ' + (reminderHour ?? 18) + ':' + String(reminderMinute ?? 0).padStart(2, '0') + ' tocar.'}
+                  </p>
+                </div>
+                {notifPerm === 'default' && (
+                  <button
+                    onClick={requestNotif}
+                    className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-amber-600 text-white active:scale-95"
+                  >
+                    Ativar
+                  </button>
+                )}
+              </div>
+            )}
+
             <div
               className={`rounded-2xl p-4 sm:p-5 mb-4 font-mono text-[12px] sm:text-sm whitespace-pre-wrap leading-relaxed ${
                 isFem
