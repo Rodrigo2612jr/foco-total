@@ -111,61 +111,63 @@ export const TodaysRoutineBlock: React.FC<Props> = ({
       <div className="space-y-4">
         {grouped.map((group) => (
           <div key={group.key}>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-3 mb-3">
               <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
+                className="w-3.5 h-3.5 rounded-full shrink-0"
                 style={{ backgroundColor: group.color }}
               />
               <span
-                className={`text-[9px] font-black uppercase tracking-widest ${
-                  isFem ? 'text-rose-600' : 'text-zinc-400'
+                className={`text-xs sm:text-sm font-black uppercase tracking-widest ${
+                  isFem ? 'text-rose-700' : 'text-white'
                 }`}
               >
                 {group.label}
               </span>
               <span
-                className={`text-[8px] font-black uppercase tracking-widest ml-auto ${
-                  isFem ? 'text-rose-400' : 'text-zinc-600'
+                className={`text-[10px] sm:text-xs font-black uppercase tracking-widest ml-auto ${
+                  isFem ? 'text-rose-400' : 'text-zinc-500'
                 }`}
               >
                 {group.tasks.filter((t) => t.completed).length}/{group.tasks.length}
               </span>
             </div>
-            <div className="space-y-1.5 ml-4">
+            <div className="space-y-2 ml-2 sm:ml-4">
               {group.tasks.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => onToggle(t.id)}
-                  className={`w-full flex items-center gap-2 p-2 sm:p-2.5 rounded-xl text-left transition-all active:scale-[0.98] ${
+                  className={`w-full flex items-start gap-3 p-3 sm:p-4 rounded-2xl text-left transition-all active:scale-[0.98] ${
                     t.completed
                       ? isFem
                         ? 'bg-rose-50/50 opacity-60'
                         : 'bg-zinc-900/60 opacity-50'
                       : isFem
-                        ? 'bg-rose-50/30 hover:bg-rose-50'
-                        : 'bg-zinc-900 hover:bg-zinc-800'
+                        ? 'bg-rose-50/40 hover:bg-rose-50 border border-rose-100'
+                        : 'bg-zinc-900 hover:bg-zinc-800 border border-zinc-800'
                   }`}
                 >
-                  {t.completed ? (
-                    <CheckCircle2
-                      className={`w-4 h-4 shrink-0 ${
-                        isFem ? 'text-rose-600' : 'text-blue-500'
-                      }`}
-                    />
-                  ) : (
-                    <Circle
-                      className={`w-4 h-4 shrink-0 ${
-                        isFem ? 'text-rose-300' : 'text-zinc-600'
-                      }`}
-                    />
-                  )}
+                  <span className="mt-0.5 shrink-0">
+                    {t.completed ? (
+                      <CheckCircle2
+                        className={`w-6 h-6 ${
+                          isFem ? 'text-rose-600' : 'text-blue-500'
+                        }`}
+                      />
+                    ) : (
+                      <Circle
+                        className={`w-6 h-6 ${
+                          isFem ? 'text-rose-300' : 'text-zinc-600'
+                        }`}
+                      />
+                    )}
+                  </span>
                   <span
-                    className={`text-[11px] sm:text-xs font-bold uppercase tracking-tight truncate ${
+                    className={`text-sm sm:text-base font-bold leading-snug break-words flex-1 ${
                       t.completed
                         ? 'line-through ' + (isFem ? 'text-rose-400' : 'text-zinc-500')
                         : isFem
-                          ? 'text-zinc-800'
-                          : 'text-zinc-200'
+                          ? 'text-zinc-900'
+                          : 'text-zinc-100'
                     }`}
                   >
                     {t.title}

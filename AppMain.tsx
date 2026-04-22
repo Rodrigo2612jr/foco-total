@@ -108,7 +108,7 @@ const ChecklistItem: React.FC<{
   const isFem = theme === 'feminine';
   return (
     <div
-      className={`flex items-center gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-[2rem] transition-all duration-500 border touch-bounce ${
+      className={`flex items-start gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl sm:rounded-[2rem] transition-all duration-500 border touch-bounce ${
         completed
           ? isFem
             ? 'bg-rose-100/20 opacity-40 scale-[0.98]'
@@ -120,7 +120,7 @@ const ChecklistItem: React.FC<{
     >
       <button
         onClick={onToggle}
-        className={`shrink-0 transition-transform active:scale-75 p-1 ${
+        className={`shrink-0 transition-transform active:scale-75 p-1 mt-0.5 ${
           completed
             ? isFem
               ? 'text-rose-600'
@@ -134,27 +134,27 @@ const ChecklistItem: React.FC<{
       </button>
       <div className="flex-1 min-w-0 text-left">
         <p
-          className={`text-xs sm:text-sm font-bold uppercase tracking-tight truncate ${
-            completed ? 'line-through text-rose-300' : isFem ? 'text-zinc-900' : 'text-zinc-200'
+          className={`text-sm sm:text-base font-bold leading-snug break-words ${
+            completed ? 'line-through text-rose-300' : isFem ? 'text-zinc-900' : 'text-zinc-100'
           }`}
         >
           {title}
         </p>
-        <div className="flex items-center gap-2 sm:gap-3 mt-1">
+        <div className="flex items-center flex-wrap gap-2 mt-2">
           {isRecurring && (
             <span
-              className={`text-[7px] sm:text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full flex items-center gap-1 ${
+              className={`text-[9px] sm:text-[10px] font-black uppercase px-2 py-1 rounded-full flex items-center gap-1 ${
                 isFem ? 'bg-rose-600 text-white' : 'bg-blue-600 text-white'
               }`}
               title="Tarefa recorrente (gerada automaticamente)"
             >
-              <Repeat className="w-2.5 h-2.5" />
+              <Repeat className="w-3 h-3" />
               ROTINA
             </span>
           )}
           {category && (
             <span
-              className={`text-[7px] sm:text-[8px] font-black uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full ${
+              className={`text-[9px] sm:text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
                 isFem ? 'bg-rose-100 text-rose-700' : 'bg-blue-900/30 text-blue-400'
               }`}
             >
@@ -162,8 +162,8 @@ const ChecklistItem: React.FC<{
             </span>
           )}
           <span
-            className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${
-              isFem ? 'text-rose-400' : 'text-zinc-600'
+            className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${
+              isFem ? 'text-rose-400' : 'text-zinc-500'
             }`}
           >
             {format(parseISO(date), 'dd MMM', { locale: ptBR })}
