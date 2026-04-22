@@ -286,6 +286,22 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     return () => window.clearInterval(id);
   }, [checkinConfig, isLoading]);
 
+  // Toggle de completed pra tasks — sempre registra completedAt
+  const toggleTaskCompleted = (id: string) => {
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const next = !t.completed;
+        if (next) {
+          return { ...t, completed: true, completedAt: new Date().toISOString() };
+        }
+        // Desmarcando — remove completedAt
+        const { completedAt, ...rest } = t;
+        return { ...rest, completed: false };
+      })
+    );
+  };
+
   // Undo toast
   const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
   const showUndo = (data: { message: string; onUndo: () => void }) => {
@@ -794,7 +810,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               filterDate={filterDate}
               tasks={tasks}
               categories={categories}
-              onToggle={(id) => setTasks(tasks.map((x) => (x.id === id ? { ...x, completed: !x.completed } : x)))}
+              onToggle={toggleTaskCompleted}
             />
             <section className={`w-full flex flex-col space-y-4 sm:space-y-8 p-5 sm:p-8 lg:p-10 rounded-2xl sm:rounded-[3rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
@@ -826,7 +842,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     theme={user.theme}
                     isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
                     isRecurring={!!t.recurringTaskId}
-                    onToggle={() => setTasks(tasks.map((x) => (x.id === t.id ? { ...x, completed: !x.completed } : x)))}
+                    onToggle={() => toggleTaskCompleted(t.id)}
                     onDelete={() => setTasks(tasks.filter((x) => x.id !== t.id))}
                     onEdit={() => setEditingTask(t)}
                   />
@@ -848,7 +864,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   filterDate={filterDate}
                   tasks={tasks}
                   categories={categories}
-                  onToggle={(id) => setTasks(tasks.map((x) => (x.id === id ? { ...x, completed: !x.completed } : x)))}
+                  onToggle={toggleTaskCompleted}
                 />
               )}
               {/* Uma única seção ativa por vez (/metas OU /tarefas) — layout em largura total */}
@@ -1064,7 +1080,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                           theme={user.theme}
                           isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
                           isRecurring={!!t.recurringTaskId}
-                          onToggle={() => setTasks(tasks.map((x) => (x.id === t.id ? { ...x, completed: !x.completed } : x)))}
+                          onToggle={() => toggleTaskCompleted(t.id)}
                           onDelete={() => setTasks(tasks.filter((x) => x.id !== t.id))}
                           onEdit={() => setEditingTask(t)}
                         />
@@ -1248,6 +1264,19 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           onUpdateConfig={(cfg) =>
             setCheckinConfig((prev) => ({ ...prev, ...cfg }))
           }
+          onAddQuickDone={(title) => {
+            const now = new Date();
+            const newTask: Task = {
+              id: crypto.randomUUID(),
+              title,
+              completed: true,
+              scheduledDate: now.toISOString(),
+              createdAt: now.toISOString(),
+              completedAt: now.toISOString(),
+              category: 'Avulsa'
+            };
+            setTasks((prev) => [newTask, ...prev]);
+          }}
         />
       )}
     </div>

@@ -53,6 +53,7 @@ export interface Task {
   completed: boolean;
   scheduledDate: string;    // ISO format
   createdAt: string;
+  completedAt?: string;      // ISO — setado quando completed vira true; removido quando desmarca
   category?: Category;
   isDaily?: boolean;         // legado — migrado para RecurringTask (daily)
   recurringTaskId?: string;  // link para RecurringTask.id (instância gerada automaticamente)

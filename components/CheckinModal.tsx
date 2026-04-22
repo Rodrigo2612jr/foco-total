@@ -16,6 +16,7 @@ interface Props {
   reminderMinute?: number;
   onClose: () => void;
   onUpdateConfig: (config: Partial<CheckinConfig>) => void;
+  onAddQuickDone: (title: string) => void; // adiciona uma tarefa avulsa já concluída hoje
 }
 
 const pctFor = (done: number, total: number) =>
@@ -32,7 +33,8 @@ export const CheckinModal: React.FC<Props> = ({
   reminderHour,
   reminderMinute,
   onClose,
-  onUpdateConfig
+  onUpdateConfig,
+  onAddQuickDone
 }) => {
   const isFem = theme === 'feminine';
   const [copied, setCopied] = useState(false);
@@ -41,6 +43,7 @@ export const CheckinModal: React.FC<Props> = ({
   const [nameInput, setNameInput] = useState(recipientName ?? '');
   const [hourInput, setHourInput] = useState(String(reminderHour ?? 18).padStart(2, '0'));
   const [minuteInput, setMinuteInput] = useState(String(reminderMinute ?? 0).padStart(2, '0'));
+  const [quickInput, setQuickInput] = useState('');
   const [notifPerm, setNotifPerm] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
   );
@@ -118,7 +121,16 @@ export const CheckinModal: React.FC<Props> = ({
     );
 
     const routineToday = todayTasks.filter((t) => t.recurringTaskId);
-    const avulsasToday = todayTasks.filter((t) => !t.recurringTaskId);
+
+    // Avulsas concluídas HOJE — considera:
+    // (a) as que têm completedAt de hoje (comportamento novo, inclui avulsas antigas marcadas hoje)
+    // (b) fallback: as agendadas pra hoje e marcadas (retrocompat de dados antigos sem completedAt)
+    const doneOther = tasks.filter((t) => {
+      if (t.recurringTaskId) return false;
+      if (!t.completed) return false;
+      if (t.completedAt) return isSameDay(parseISO(t.completedAt), target);
+      return isSameDay(parseISO(t.scheduledDate), target);
+    });
 
     const overdue = tasks.filter(
       (t) =>
@@ -130,7 +142,6 @@ export const CheckinModal: React.FC<Props> = ({
 
     const doneRoutine = routineToday.filter((t) => t.completed);
     const pendingRoutine = routineToday.filter((t) => !t.completed);
-    const doneOther = avulsasToday.filter((t) => t.completed);
 
     const doneGoalsToday = goals.filter(
       (g) => g.completed && isSameDay(parseISO(g.date), target)
@@ -257,6 +268,13 @@ export const CheckinModal: React.FC<Props> = ({
     const prompt = `Melhore essa mensagem de check-in pra minha chefe (WhatsApp). Deixe mais natural, humana e profissional, mas mantenha a estrutura e os dados. Não invente números novos. Responda só com a mensagem pronta, sem explicações.\n\n---\n\n${message}`;
     const url = `https://claude.ai/new?q=${encodeURIComponent(prompt)}`;
     window.open(url, '_blank');
+  };
+
+  const handleAddQuick = () => {
+    const title = quickInput.trim();
+    if (!title) return;
+    onAddQuickDone(title);
+    setQuickInput('');
   };
 
   const saveConfig = () => {
@@ -419,6 +437,46 @@ export const CheckinModal: React.FC<Props> = ({
                 )}
               </div>
             )}
+
+            {/* Input rápido pra adicionar algo avulso direto na mensagem */}
+            <div
+              className={`rounded-2xl p-3 mb-3 border-2 border-dashed ${
+                isFem ? 'border-rose-200 bg-rose-50/20' : 'border-zinc-700 bg-zinc-950/50'
+              }`}
+            >
+              <p
+                className={`text-[10px] font-black uppercase tracking-wider mb-2 ${
+                  isFem ? 'text-rose-600' : 'text-zinc-400'
+                }`}
+              >
+                ➕ Fez algo a mais hoje? Adiciona:
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={quickInput}
+                  onChange={(e) => setQuickInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddQuick()}
+                  placeholder="Ex: Resolvi problema do fornecedor X"
+                  className={`flex-1 p-3 rounded-xl text-sm font-bold outline-none ${
+                    isFem
+                      ? 'bg-white text-zinc-900 border border-rose-200 focus:border-rose-400'
+                      : 'bg-black text-zinc-100 border border-zinc-800 focus:border-zinc-600'
+                  }`}
+                />
+                <button
+                  onClick={handleAddQuick}
+                  disabled={!quickInput.trim()}
+                  className={`px-4 py-3 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-40 ${
+                    isFem ? 'bg-rose-600 text-white' : 'bg-blue-600 text-white'
+                  }`}
+                >
+                  + Add
+                </button>
+              </div>
+              <p className={`text-[9px] mt-2 ${isFem ? 'text-rose-400' : 'text-zinc-500'}`}>
+                Aparece na mensagem e fica salvo como tarefa concluída.
+              </p>
+            </div>
 
             <div
               className={`rounded-2xl p-4 sm:p-5 mb-4 font-mono text-[12px] sm:text-sm whitespace-pre-wrap leading-relaxed ${
