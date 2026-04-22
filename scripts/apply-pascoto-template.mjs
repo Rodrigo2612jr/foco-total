@@ -1,51 +1,46 @@
-import { CategoryDef, RecurringTask } from '../types';
+// Script one-shot: aplica a rotina "Rotina Pascoto" direto no doc `users/pascoto`
+// do Firestore. Faz MERGE — não apaga dados existentes, só adiciona categorias
+// e recorrentes que ainda não estão lá.
+//
+// Uso:
+//   node scripts/apply-pascoto-template.mjs
+//
+// Requer apenas as deps do projeto (firebase). Não precisa Firebase Admin SDK.
 
-// Template "Rotina Pascoto" — categorias e recorrentes pré-definidas
-// com a rotina completa do negócio (diárias, semanais, mensais).
-// Usuário pode importar via botão "Importar rotina" na tela /rotina.
-// Não é seed global: só roda quando o usuário clica.
+import { initializeApp } from 'firebase/app';
+import { doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import { randomUUID } from 'node:crypto';
 
-export interface RecurringTemplate {
-  id: string;
-  name: string;
-  description: string;
-  categories: Omit<CategoryDef, 'id' | 'createdAt'>[];
-  // recurrings referenciam categorias pelo NOME dela (resolvido no momento do import)
-  recurrings: Omit<RecurringTask, 'id' | 'createdAt' | 'categoryId'> & {
-    categoryName: string;
-  } extends infer T
-    ? (T & { categoryName: string })[]
-    : never;
-}
-
-type TemplateRecurring = Omit<RecurringTask, 'id' | 'createdAt' | 'categoryId'> & {
-  categoryName: string;
+// Mesmas credenciais de services/firebase.ts (client config)
+const firebaseConfig = {
+  apiKey: 'AIzaSyAsBPgsRCnUOKfi_g6nY_4NAa60maKS_9s',
+  authDomain: 'foco-total-5d7bd.firebaseapp.com',
+  projectId: 'foco-total-5d7bd',
+  storageBucket: 'foco-total-5d7bd.firebasestorage.app',
+  messagingSenderId: '525962296758',
+  appId: '1:525962296758:web:92a7ee365f63b7c2ca1517',
+  measurementId: 'G-NZHXSY5Q92'
 };
 
-export interface Template {
-  id: string;
-  name: string;
-  description: string;
-  categories: Omit<CategoryDef, 'id' | 'createdAt'>[];
-  recurrings: TemplateRecurring[];
-}
+const USERNAME = 'pascoto';
 
-export const PASCOTO_TEMPLATE: Template = {
+// ---------- Template "Rotina Pascoto" (espelha services/recurringTemplates.ts) ----------
+const TEMPLATE = {
   id: 'pascoto-routine',
   name: 'Rotina Pascoto',
   description:
-    'Rotina completa baseada na Proposta de Reorganização (6 frentes + rituais): Administrativo/RH, Financeiro, E-commerce, Marketing, Clube, Automação e Rituais diários.',
+    'Rotina completa baseada na Proposta de Reorganização (6 frentes + rituais).',
   categories: [
-    { name: 'Administrativo/RH', color: '#7C3AED' },    // roxo — A1, A2, A3
-    { name: 'Financeiro', color: '#059669' },            // esmeralda — F1, F2, F3, F4
-    { name: 'E-commerce/Site', color: '#2563EB' },       // azul — Frente 3
-    { name: 'Marketing', color: '#DB2777' },             // rosa — Frente 4
-    { name: 'Clube de Fidelidade', color: '#F59E0B' },   // âmbar — Frente 5
-    { name: 'Automação', color: '#0891B2' },             // ciano — Frente 6
-    { name: 'Rituais', color: '#475569' }                // cinza — R1, R2
+    { name: 'Administrativo/RH', color: '#7C3AED' },
+    { name: 'Financeiro', color: '#059669' },
+    { name: 'E-commerce/Site', color: '#2563EB' },
+    { name: 'Marketing', color: '#DB2777' },
+    { name: 'Clube de Fidelidade', color: '#F59E0B' },
+    { name: 'Automação', color: '#0891B2' },
+    { name: 'Rituais', color: '#475569' }
   ],
   recurrings: [
-    // ---------- 🟢 DIÁRIAS ----------
+    // DIÁRIAS
     { title: 'Check-in matinal — enviar plano do dia no WhatsApp', categoryName: 'Rituais', frequency: 'daily', active: true },
     { title: 'F1 — Pagar boletos do dia', categoryName: 'Financeiro', frequency: 'daily', active: true },
     { title: 'F2 — Analisar e-mails do financeiro + lançar impostos (contabilidade)', categoryName: 'Financeiro', frequency: 'daily', active: true },
@@ -54,16 +49,13 @@ export const PASCOTO_TEMPLATE: Template = {
     { title: 'Acompanhar Grupo VIP (conversões e engajamento)', categoryName: 'Marketing', frequency: 'daily', active: true },
     { title: 'Checar site — pedidos, estoque, funcionamento', categoryName: 'E-commerce/Site', frequency: 'daily', active: true },
 
-    // ---------- 🟡 SEMANAIS ----------
-    // R2 reunião: terça (presencial, alinhamento com equipe)
+    // SEMANAIS
     { title: 'R2 — Reunião semanal de alinhamento (15-20 min)', categoryName: 'Rituais', frequency: 'weekly', daysOfWeek: [2], active: true },
-    // Promoção: planejar na sexta pra começar a rodar segunda (home office)
     { title: 'Criar promoção da próxima semana (encarte)', categoryName: 'Marketing', frequency: 'weekly', daysOfWeek: [5], active: true },
-    // Fechamento semanal: sexta
     { title: 'Análise de performance dos anúncios da semana', categoryName: 'Marketing', frequency: 'weekly', daysOfWeek: [5], active: true },
     { title: 'Revisar métricas de venda do site da semana (M5)', categoryName: 'E-commerce/Site', frequency: 'weekly', daysOfWeek: [5], active: true },
 
-    // ---------- 🔵 MENSAIS ----------
+    // MENSAIS
     { title: 'A3 — Organizar caixinhas da Loja 1 e Loja 2', categoryName: 'Administrativo/RH', frequency: 'monthly', dayOfMonth: 1, active: true },
     { title: 'F4 — Fechar e analisar DRE do mês', categoryName: 'Financeiro', frequency: 'monthly', dayOfMonth: 5, active: true },
     { title: 'A3 — Arquivar notas lançadas e boletos pagos (envelope/pasta)', categoryName: 'Administrativo/RH', frequency: 'monthly', dayOfMonth: 5, active: true },
@@ -79,35 +71,18 @@ export const PASCOTO_TEMPLATE: Template = {
   ]
 };
 
-export const AVAILABLE_TEMPLATES: Template[] = [PASCOTO_TEMPLATE];
-
-// Aplica um template no usuário. Faz merge: não duplica categorias com mesmo nome
-// nem recorrentes com título+frequência já existentes.
-export const applyTemplate = (params: {
-  template: Template;
-  existingCategories: CategoryDef[];
-  existingRecurrings: RecurringTask[];
-}): {
-  mergedCategories: CategoryDef[];
-  mergedRecurrings: RecurringTask[];
-  addedCategories: number;
-  addedRecurrings: number;
-} => {
-  const { template, existingCategories, existingRecurrings } = params;
-
-  const catNameToDef = new Map<string, CategoryDef>(
-    existingCategories.map((c) => [c.name.toLowerCase(), c])
-  );
-  const addedCats: CategoryDef[] = [];
+// ---------- Lógica de merge (idêntica à de services/recurringTemplates.ts::applyTemplate) ----------
+function applyTemplate({ template, existingCategories, existingRecurrings }) {
+  const catNameToDef = new Map(existingCategories.map((c) => [c.name.toLowerCase(), c]));
+  const addedCats = [];
 
   template.categories.forEach((tplCat) => {
     const key = tplCat.name.toLowerCase();
     if (!catNameToDef.has(key)) {
-      const newCat: CategoryDef = {
-        id: crypto.randomUUID(),
+      const newCat = {
+        id: randomUUID(),
         name: tplCat.name,
         color: tplCat.color,
-        icon: tplCat.icon,
         createdAt: new Date().toISOString()
       };
       catNameToDef.set(key, newCat);
@@ -115,13 +90,7 @@ export const applyTemplate = (params: {
     }
   });
 
-  const existingKey = (r: {
-    title: string;
-    frequency: string;
-    dayOfWeek?: number;
-    daysOfWeek?: number[];
-    dayOfMonth?: number;
-  }) => {
+  const existingKey = (r) => {
     const daysKey = Array.isArray(r.daysOfWeek) && r.daysOfWeek.length > 0
       ? r.daysOfWeek.slice().sort((a, b) => a - b).join(',')
       : (r.dayOfWeek ?? '');
@@ -129,15 +98,14 @@ export const applyTemplate = (params: {
   };
 
   const existingRecSet = new Set(existingRecurrings.map(existingKey));
-  const addedRecs: RecurringTask[] = [];
+  const addedRecs = [];
 
   template.recurrings.forEach((tplRec) => {
     const key = existingKey(tplRec);
     if (existingRecSet.has(key)) return;
-
     const cat = catNameToDef.get(tplRec.categoryName.toLowerCase());
-    const newRec: RecurringTask = {
-      id: crypto.randomUUID(),
+    const newRec = {
+      id: randomUUID(),
       title: tplRec.title,
       categoryId: cat?.id,
       category: cat?.name ?? tplRec.categoryName,
@@ -149,6 +117,8 @@ export const applyTemplate = (params: {
       createdAt: new Date().toISOString(),
       notes: tplRec.notes
     };
+    // Firestore não aceita undefined — remove campos vazios
+    Object.keys(newRec).forEach((k) => newRec[k] === undefined && delete newRec[k]);
     addedRecs.push(newRec);
     existingRecSet.add(key);
   });
@@ -159,4 +129,55 @@ export const applyTemplate = (params: {
     addedCategories: addedCats.length,
     addedRecurrings: addedRecs.length
   };
-};
+}
+
+// ---------- Execução ----------
+async function run() {
+  console.log(`🔥 Conectando ao Firestore (${firebaseConfig.projectId})...`);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const ref = doc(db, 'users', USERNAME);
+  console.log(`📖 Lendo users/${USERNAME}...`);
+  const snap = await getDoc(ref);
+
+  const current = snap.exists() ? snap.data() : {};
+  const existingCategories = Array.isArray(current.categories) ? current.categories : [];
+  const existingRecurrings = Array.isArray(current.recurringTasks) ? current.recurringTasks : [];
+
+  console.log(
+    `   Já tem: ${existingCategories.length} categorias, ${existingRecurrings.length} recorrentes.`
+  );
+
+  const result = applyTemplate({
+    template: TEMPLATE,
+    existingCategories,
+    existingRecurrings
+  });
+
+  console.log(`✨ Vou adicionar: ${result.addedCategories} categorias, ${result.addedRecurrings} recorrentes.`);
+
+  if (result.addedCategories === 0 && result.addedRecurrings === 0) {
+    console.log('   Nada a fazer — tudo já está lá.');
+    process.exit(0);
+  }
+
+  await setDoc(
+    ref,
+    {
+      categories: result.mergedCategories,
+      recurringTasks: result.mergedRecurrings
+    },
+    { merge: true }
+  );
+
+  console.log(`✅ Gravado em users/${USERNAME}.`);
+  console.log(`   Total agora: ${result.mergedCategories.length} categorias, ${result.mergedRecurrings.length} recorrentes.`);
+  process.exit(0);
+}
+
+run().catch((err) => {
+  console.error('❌ Erro:', err?.message ?? err);
+  console.error(err?.stack ?? '');
+  process.exit(1);
+});
