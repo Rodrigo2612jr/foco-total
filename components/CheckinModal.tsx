@@ -17,6 +17,7 @@ interface Props {
   onClose: () => void;
   onUpdateConfig: (config: Partial<CheckinConfig>) => void;
   onAddQuickDone: (title: string) => void; // adiciona uma tarefa avulsa já concluída hoje
+  onMarkAsCompletedToday: (ids: string[]) => void; // seta completedAt=agora nas IDs (pra entrar na mensagem)
 }
 
 const pctFor = (done: number, total: number) =>
@@ -34,7 +35,8 @@ export const CheckinModal: React.FC<Props> = ({
   reminderMinute,
   onClose,
   onUpdateConfig,
-  onAddQuickDone
+  onAddQuickDone,
+  onMarkAsCompletedToday
 }) => {
   const isFem = theme === 'feminine';
   const [copied, setCopied] = useState(false);
@@ -44,6 +46,43 @@ export const CheckinModal: React.FC<Props> = ({
   const [hourInput, setHourInput] = useState(String(reminderHour ?? 18).padStart(2, '0'));
   const [minuteInput, setMinuteInput] = useState(String(reminderMinute ?? 0).padStart(2, '0'));
   const [quickInput, setQuickInput] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickedIds, setPickedIds] = useState<Set<string>>(new Set());
+
+  // Candidatos: avulsas concluídas que ainda NÃO estão marcadas como "de hoje"
+  // (ou seja, não têm completedAt ou completedAt é de outro dia).
+  const pickerCandidates = useMemo(() => {
+    const t = today;
+    return tasks.filter((task) => {
+      if (task.recurringTaskId) return false;
+      if (!task.completed) return false;
+      if (!task.completedAt) return true;
+      return !isSameDay(parseISO(task.completedAt), t);
+    });
+  }, [tasks, today]);
+
+  const togglePick = (id: string) => {
+    setPickedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const pickAll = () => {
+    setPickedIds(new Set(pickerCandidates.map((t) => t.id)));
+  };
+
+  const confirmPicker = () => {
+    if (pickedIds.size === 0) {
+      setShowPicker(false);
+      return;
+    }
+    onMarkAsCompletedToday(Array.from(pickedIds));
+    setPickedIds(new Set());
+    setShowPicker(false);
+  };
   const [notifPerm, setNotifPerm] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
   );
@@ -434,6 +473,106 @@ export const CheckinModal: React.FC<Props> = ({
                   >
                     Ativar
                   </button>
+                )}
+              </div>
+            )}
+
+            {/* Painel: puxar tarefas avulsas concluídas pro check-in */}
+            {pickerCandidates.length > 0 && (
+              <div
+                className={`rounded-2xl p-3 mb-3 border-2 ${
+                  isFem ? 'border-blue-200 bg-blue-50/30' : 'border-blue-800 bg-blue-950/30'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <p
+                    className={`text-[10px] font-black uppercase tracking-wider ${
+                      isFem ? 'text-blue-700' : 'text-blue-300'
+                    }`}
+                  >
+                    📋 Tem {pickerCandidates.length} tarefa{pickerCandidates.length > 1 ? 's' : ''} conclu{pickerCandidates.length > 1 ? 'ídas' : 'ída'} no Checklist. Marca as que foram hoje:
+                  </p>
+                  {!showPicker && (
+                    <button
+                      onClick={() => setShowPicker(true)}
+                      className={`shrink-0 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                        isFem ? 'bg-blue-600 text-white' : 'bg-blue-700 text-white'
+                      }`}
+                    >
+                      Selecionar
+                    </button>
+                  )}
+                </div>
+                {showPicker && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={pickAll}
+                        className={`text-[10px] font-black uppercase tracking-wider ${
+                          isFem ? 'text-blue-700 hover:text-blue-900' : 'text-blue-300 hover:text-blue-100'
+                        }`}
+                      >
+                        ☑ Marcar todas
+                      </button>
+                      <span className={`text-[10px] ${isFem ? 'text-blue-600' : 'text-blue-400'}`}>
+                        {pickedIds.size}/{pickerCandidates.length} selec.
+                      </span>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                      {pickerCandidates.map((task) => (
+                        <label
+                          key={task.id}
+                          className={`flex items-center gap-2 p-2 rounded-xl cursor-pointer ${
+                            pickedIds.has(task.id)
+                              ? isFem
+                                ? 'bg-blue-100'
+                                : 'bg-blue-900/50'
+                              : isFem
+                                ? 'bg-white hover:bg-blue-50'
+                                : 'bg-zinc-900 hover:bg-zinc-800'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={pickedIds.has(task.id)}
+                            onChange={() => togglePick(task.id)}
+                            className="accent-blue-600"
+                          />
+                          <span className={`text-xs font-bold flex-1 ${isFem ? 'text-zinc-900' : 'text-zinc-200'}`}>
+                            {task.title}
+                          </span>
+                          {task.category && (
+                            <span
+                              className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                isFem ? 'bg-blue-200 text-blue-800' : 'bg-blue-900/60 text-blue-300'
+                              }`}
+                            >
+                              {task.category}
+                            </span>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => { setShowPicker(false); setPickedIds(new Set()); }}
+                        className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                          isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-800 text-zinc-300'
+                        }`}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={confirmPicker}
+                        disabled={pickedIds.size === 0}
+                        className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider text-white disabled:opacity-40 ${
+                          isFem ? 'bg-blue-600' : 'bg-blue-700'
+                        }`}
+                      >
+                        Adicionar à mensagem ({pickedIds.size})
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

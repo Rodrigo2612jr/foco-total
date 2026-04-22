@@ -1277,6 +1277,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             };
             setTasks((prev) => [newTask, ...prev]);
           }}
+          onMarkAsCompletedToday={(ids) => {
+            const nowIso = new Date().toISOString();
+            const idSet = new Set(ids);
+            setTasks((prev) =>
+              prev.map((t) => (idSet.has(t.id) ? { ...t, completedAt: nowIso } : t))
+            );
+          }}
         />
       )}
     </div>
