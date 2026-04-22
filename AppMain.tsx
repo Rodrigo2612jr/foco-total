@@ -357,8 +357,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     () => applyFilters(goals, 'date'),
     [goals, filterDate, filterCategory, filterStatus]
   );
+  // Checklist principal mostra APENAS tarefas avulsas (sem recurringTaskId).
+  // As recorrentes aparecem no bloco <TodaysRoutineBlock /> acima, respeitando o mesmo filtro de data.
+  // Assim a promoção que cai na sexta só aparece na sexta em "Rotina de Hoje" — não polui o dia-a-dia.
   const currentTasks = useMemo(
-    () => applyFilters(tasks, 'scheduledDate', true),
+    () => applyFilters(tasks, 'scheduledDate', true).filter((t) => !t.recurringTaskId),
     [tasks, filterDate, filterCategory, filterStatus]
   );
 
