@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Copy, MessageCircle, Send, Sparkles, X } from 'lucide-react';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { CheckinConfig, Task, ThemeType } from '../types';
-import { subscribeToPush } from '../services/push';
+import { pushSupported, subscribeToPush } from '../services/push';
 
 interface Props {
   theme: ThemeType;
@@ -44,6 +44,29 @@ export const CheckinModal: React.FC<Props> = ({
   const [notifPerm, setNotifPerm] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
   );
+
+  // Auto-sync push subscription: se permission já está granted mas ainda não
+  // existe subscription salva (ou está desatualizada), registra silenciosamente.
+  useEffect(() => {
+    if (notifPerm !== 'granted' || !pushSupported()) return;
+    (async () => {
+      try {
+        const sub = await subscribeToPush();
+        if (sub && sub.endpoint && sub.keys?.p256dh && sub.keys?.auth) {
+          onUpdateConfig({
+            pushSubscription: {
+              endpoint: sub.endpoint,
+              expirationTime: sub.expirationTime ?? null,
+              keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }
+            }
+          });
+        }
+      } catch {
+        // silencioso
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifPerm]);
 
   const requestNotif = async () => {
     if (typeof window === 'undefined' || !('Notification' in window)) return;
