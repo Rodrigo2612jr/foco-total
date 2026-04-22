@@ -10,6 +10,7 @@ import {
   Heart,
   LogOut,
   Plus,
+  Repeat,
   Star,
   StickyNote,
   Target,
@@ -21,33 +22,69 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { format, isBefore, isSameDay, parseISO, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { Category, Goal, Priority, Task, ThemeType, User } from './types';
+import {
+  Category,
+  CategoryDef,
+  Goal,
+  Priority,
+  RecurringGenerationLog,
+  RecurringTask,
+  Task,
+  ThemeType,
+  User
+} from './types';
 import { DashboardHeader } from './components/DashboardHeader';
 import { WeeklyChart } from './components/WeeklyChart';
 import { CategoryChart } from './components/CategoryChart';
+import { RecurringTasksPanel } from './components/RecurringTasksPanel';
 import { db } from './services/firebase';
+import { catchUpRecurringInstances, migrateLegacyIsDaily, toDateKey } from './services/recurringService';
+import { notifyDailyRoutineSummary } from './services/notifications';
 
 const getEmptyData = () => ({
   goals: [] as Goal[],
   tasks: [] as Task[],
-  notes: [] as string[]
+  notes: [] as string[],
+  categories: [] as CategoryDef[],
+  recurringTasks: [] as RecurringTask[],
+  recurringGenerationLog: {} as RecurringGenerationLog
 });
 
 const loadUserData = async (username: string) => {
   const ref = doc(db, 'users', username);
   const snap = await getDoc(ref);
   if (!snap.exists()) return getEmptyData();
-  const data = snap.data() as Partial<{ goals: Goal[]; tasks: Task[]; notes: string[] }>;
+  const data = snap.data() as Partial<{
+    goals: Goal[];
+    tasks: Task[];
+    notes: string[];
+    categories: CategoryDef[];
+    recurringTasks: RecurringTask[];
+    recurringGenerationLog: RecurringGenerationLog;
+  }>;
   return {
     goals: Array.isArray(data.goals) ? data.goals : [],
     tasks: Array.isArray(data.tasks) ? data.tasks : [],
-    notes: Array.isArray(data.notes) ? data.notes : []
+    notes: Array.isArray(data.notes) ? data.notes : [],
+    categories: Array.isArray(data.categories) ? data.categories : [],
+    recurringTasks: Array.isArray(data.recurringTasks) ? data.recurringTasks : [],
+    recurringGenerationLog:
+      data.recurringGenerationLog && typeof data.recurringGenerationLog === 'object'
+        ? data.recurringGenerationLog
+        : {}
   };
 };
 
 const saveUserData = async (
   username: string,
-  payload: { goals: Goal[]; tasks: Task[]; notes: string[] }
+  payload: {
+    goals: Goal[];
+    tasks: Task[];
+    notes: string[];
+    categories: CategoryDef[];
+    recurringTasks: RecurringTask[];
+    recurringGenerationLog: RecurringGenerationLog;
+  }
 ) => {
   const ref = doc(db, 'users', username);
   await setDoc(ref, payload, { merge: true });
@@ -63,7 +100,8 @@ const ChecklistItem: React.FC<{
   onDelete: () => void;
   onEdit?: () => void;
   isOverdue?: boolean;
-}> = ({ title, category, completed, date, theme, onToggle, onDelete, onEdit, isOverdue }) => {
+  isRecurring?: boolean;
+}> = ({ title, category, completed, date, theme, onToggle, onDelete, onEdit, isOverdue, isRecurring }) => {
   const isFem = theme === 'feminine';
   return (
     <div
@@ -100,6 +138,17 @@ const ChecklistItem: React.FC<{
           {title}
         </p>
         <div className="flex items-center gap-2 sm:gap-3 mt-1">
+          {isRecurring && (
+            <span
+              className={`text-[7px] sm:text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full flex items-center gap-1 ${
+                isFem ? 'bg-rose-600 text-white' : 'bg-blue-600 text-white'
+              }`}
+              title="Tarefa recorrente (gerada automaticamente)"
+            >
+              <Repeat className="w-2.5 h-2.5" />
+              ROTINA
+            </span>
+          )}
           {category && (
             <span
               className={`text-[7px] sm:text-[8px] font-black uppercase px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full ${
@@ -150,6 +199,9 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [goals, setGoals] = useState<Goal[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [notes, setNotes] = useState<string[]>([]);
+  const [categories, setCategories] = useState<CategoryDef[]>([]);
+  const [recurringTasks, setRecurringTasks] = useState<RecurringTask[]>([]);
+  const [recurringGenerationLog, setRecurringGenerationLog] = useState<RecurringGenerationLog>({});
   const [isLoading, setIsLoading] = useState(true);
   const [canSave, setCanSave] = useState(false);
   const hasLoadedRef = useRef(false);
@@ -185,20 +237,57 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     hasLoadedRef.current = false;
 
     loadUserData(user.username)
-      .then(({ goals, tasks, notes }) => {
+      .then((loaded) => {
         if (!isMounted) return;
-        setGoals(goals);
-        setTasks(tasks);
-        setNotes(notes);
+
+        // 1. Migra tasks legadas (isDaily=true) para RecurringTasks diárias (uma única vez)
+        const { migratedRecurring, cleanedTasks } = migrateLegacyIsDaily({
+          tasks: loaded.tasks,
+          recurringTasks: loaded.recurringTasks
+        });
+
+        // 2. Catch-up: gera instâncias dos últimos 7 dias que ainda não foram geradas
+        const { newTasks, updatedLog } = catchUpRecurringInstances({
+          today: new Date(),
+          recurringTasks: migratedRecurring,
+          existingTasks: cleanedTasks,
+          log: loaded.recurringGenerationLog,
+          categories: loaded.categories
+        });
+
+        setGoals(loaded.goals);
+        setTasks([...newTasks, ...cleanedTasks]);
+        setNotes(loaded.notes);
+        setCategories(loaded.categories);
+        setRecurringTasks(migratedRecurring);
+        setRecurringGenerationLog(updatedLog);
         setCanSave(true);
         hasLoadedRef.current = true;
         setIsLoading(false);
+
+        // Notificação local: resumo das recorrentes do dia (uma vez por dia)
+        const todayKey = toDateKey(new Date());
+        const allTasks = [...newTasks, ...cleanedTasks];
+        const todayRecurringTasks = allTasks.filter(
+          (t) =>
+            t.recurringTaskId &&
+            t.scheduledDate.slice(0, 10) === todayKey
+        );
+        notifyDailyRoutineSummary({
+          username: user.username,
+          dateKey: todayKey,
+          pendingCount: todayRecurringTasks.filter((t) => !t.completed).length,
+          completedCount: todayRecurringTasks.filter((t) => t.completed).length
+        });
       })
       .catch(() => {
         if (!isMounted) return;
         setGoals([]);
         setTasks([]);
         setNotes([]);
+        setCategories([]);
+        setRecurringTasks([]);
+        setRecurringGenerationLog({});
         setCanSave(false);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -213,13 +302,20 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     if (!hasLoadedRef.current || isLoading || !canSave) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
-      saveUserData(user.username, { goals, tasks, notes }).catch(() => undefined);
+      saveUserData(user.username, {
+        goals,
+        tasks,
+        notes,
+        categories,
+        recurringTasks,
+        recurringGenerationLog
+      }).catch(() => undefined);
     }, 400);
 
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, user.username, isLoading, canSave]);
+  }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, user.username, isLoading, canSave]);
 
   const applyFilters = (items: any[], dateKey: string, includeOverdue = false) => {
     const selectedDate = parseISO(filterDate);
@@ -297,7 +393,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     });
   }, [editingTask]);
 
-  const isGoalsPath = location.pathname === '/' || location.pathname === '/metas';
+  const isRotinaPath = location.pathname === '/rotina';
+  const isGoalsPath = !isRotinaPath && (location.pathname === '/' || location.pathname === '/metas');
   const isTasksPath = location.pathname === '/tarefas';
   const isChecklistGoalsPath = location.pathname === '/checklist-metas';
   const isChecklistTasksPath = location.pathname === '/checklist-tarefas';
@@ -335,6 +432,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const navItems = [
     { path: '/metas', label: 'Metas', icon: Target, active: isGoalsPath },
     { path: '/tarefas', label: 'Tarefas', icon: ClipboardList, active: isTasksPath },
+    { path: '/rotina', label: 'Rotina', icon: Repeat, active: isRotinaPath },
     { path: '/checklist-metas', label: 'Check Metas', icon: CheckCircle2, active: isChecklistGoalsPath },
     { path: '/checklist-tarefas', label: 'Check Tarefas', icon: CheckCircle2, active: isChecklistTasksPath },
   ];
@@ -419,13 +517,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           </span>
         </div>
         <span className="font-black italic uppercase text-[9px] tracking-widest opacity-60">
-          {isChecklistGoalsPath
-            ? 'CHECK METAS'
-            : isChecklistTasksPath
-              ? 'CHECK TAREFAS'
-              : isTasksPath
-                ? 'TAREFAS'
-                : 'METAS'}
+          {isRotinaPath
+            ? 'ROTINA'
+            : isChecklistGoalsPath
+              ? 'CHECK METAS'
+              : isChecklistTasksPath
+                ? 'CHECK TAREFAS'
+                : isTasksPath
+                  ? 'TAREFAS'
+                  : 'METAS'}
         </span>
         <div className="w-8" />
       </div>
@@ -450,16 +550,24 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 sm:gap-8">
               <div>
                 <h2 className={`text-2xl sm:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
-                  {isChecklistGoalsPath
-                    ? 'Checklist de Metas'
-                    : isChecklistTasksPath
-                      ? 'Checklist de Tarefas'
-                      : isTasksPath
-                        ? 'Dashboard de Tarefas'
-                        : 'Dashboard de Metas'}
+                  {isRotinaPath
+                    ? 'Rotina Recorrente'
+                    : isChecklistGoalsPath
+                      ? 'Checklist de Metas'
+                      : isChecklistTasksPath
+                        ? 'Checklist de Tarefas'
+                        : isTasksPath
+                          ? 'Dashboard de Tarefas'
+                          : 'Dashboard de Metas'}
                 </h2>
                 <p className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] mt-2 sm:mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
-                  {isChecklistView ? 'Execução • Registros do Dia' : isTasksPath ? 'Produtividade • Execução Tática' : 'Foco • Metas Estratégicas'}
+                  {isRotinaPath
+                    ? 'Tarefas fixas • Geradas automaticamente'
+                    : isChecklistView
+                      ? 'Execução • Registros do Dia'
+                      : isTasksPath
+                        ? 'Produtividade • Execução Tática'
+                        : 'Foco • Metas Estratégicas'}
                 </p>
               </div>
             </div>
@@ -533,11 +641,20 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             </div>
           </div>
 
-          {!isChecklistView && (
+          {!isChecklistView && !isRotinaPath && (
             <DashboardHeader {...(isTasksPath ? statsTasks : statsGoals)} theme={user.theme} />
           )}
 
-          {isChecklistGoalsPath ? (
+          {isRotinaPath ? (
+            <RecurringTasksPanel
+              theme={user.theme}
+              categories={categories}
+              recurringTasks={recurringTasks}
+              tasks={tasks}
+              onUpdateCategories={setCategories}
+              onUpdateRecurrings={setRecurringTasks}
+            />
+          ) : isChecklistGoalsPath ? (
             <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
@@ -609,6 +726,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     date={t.scheduledDate}
                     theme={user.theme}
                     isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
+                    isRecurring={!!t.recurringTaskId}
                     onToggle={() => setTasks(tasks.map((x) => (x.id === t.id ? { ...x, completed: !x.completed } : x)))}
                     onDelete={() => setTasks(tasks.filter((x) => x.id !== t.id))}
                     onEdit={() => setEditingTask(t)}
@@ -835,6 +953,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                           date={t.scheduledDate}
                           theme={user.theme}
                           isOverdue={!t.completed && isBefore(parseISO(t.scheduledDate), parseISO(filterDate))}
+                          isRecurring={!!t.recurringTaskId}
                           onToggle={() => setTasks(tasks.map((x) => (x.id === t.id ? { ...x, completed: !x.completed } : x)))}
                           onDelete={() => setTasks(tasks.filter((x) => x.id !== t.id))}
                           onEdit={() => setEditingTask(t)}

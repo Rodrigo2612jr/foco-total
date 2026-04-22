@@ -1,11 +1,39 @@
-
 export enum Priority {
   LOW = 'Baixa',
   MEDIUM = 'Média',
   HIGH = 'Alta'
 }
 
-export type Category = 'Trabalho' | 'Pessoal' | 'Saúde' | 'Estudos' | 'Outros';
+// Categorias agora são dinâmicas (por usuário). Mantemos o tipo como string
+// para compatibilidade com dados antigos (Trabalho, Pessoal, Saúde, Estudos, Outros).
+export type Category = string;
+
+// Frequência de uma tarefa recorrente.
+// - daily: todo dia
+// - weekly: em um dia específico da semana (0=Dom ... 6=Sáb)
+// - monthly: em um dia específico do mês (1..31; se o mês não tiver, cai no último dia)
+export type Frequency = 'daily' | 'weekly' | 'monthly';
+
+export interface CategoryDef {
+  id: string;
+  name: string;
+  color: string;  // hex ex: '#E11D48'
+  icon?: string;  // nome do ícone lucide (opcional)
+  createdAt: string;
+}
+
+export interface RecurringTask {
+  id: string;
+  title: string;
+  categoryId?: string;      // link para CategoryDef.id (preferencial)
+  category?: string;        // fallback: nome de categoria (compatibilidade)
+  frequency: Frequency;
+  dayOfWeek?: number;       // 0..6 — usado quando frequency === 'weekly'
+  dayOfMonth?: number;      // 1..31 — usado quando frequency === 'monthly'
+  active: boolean;          // false = pausada (não gera mais instâncias futuras)
+  createdAt: string;
+  notes?: string;
+}
 
 export interface Goal {
   id: string;
@@ -15,17 +43,18 @@ export interface Goal {
   date: string; // ISO format
   priority: Priority;
   category: Category;
-  isDaily?: boolean;
+  isDaily?: boolean;         // legado — migrado para RecurringTask (daily)
 }
 
 export interface Task {
   id: string;
   title: string;
   completed: boolean;
-  scheduledDate: string; // ISO format
+  scheduledDate: string;    // ISO format
   createdAt: string;
   category?: Category;
-  isDaily?: boolean;
+  isDaily?: boolean;         // legado — migrado para RecurringTask (daily)
+  recurringTaskId?: string;  // link para RecurringTask.id (instância gerada automaticamente)
 }
 
 export interface WeeklyStat {
@@ -41,3 +70,7 @@ export interface User {
   name: string;
   theme: ThemeType;
 }
+
+// Log de geração por dia — evita duplicar quando o app é aberto várias vezes.
+// dateKey = 'yyyy-MM-dd'. Valor = array de RecurringTask.id já gerados nesse dia.
+export type RecurringGenerationLog = Record<string, string[]>;
