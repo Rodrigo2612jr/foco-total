@@ -7,6 +7,7 @@ import {
   CalendarRange,
   Download,
   Edit3,
+  FileDown,
   Flame,
   Pause,
   Play,
@@ -50,6 +51,8 @@ interface Props {
   tasks: Task[];
   onUpdateCategories: (cats: CategoryDef[]) => void;
   onUpdateRecurrings: (recs: RecurringTask[]) => void;
+  onDeleteRecurringCascade?: (recId: string, alsoDeletePending: boolean) => void;
+  onShowUndoToast?: (data: { message: string; onUndo: () => void }) => void;
 }
 
 export const RecurringTasksPanel: React.FC<Props> = ({
@@ -58,7 +61,9 @@ export const RecurringTasksPanel: React.FC<Props> = ({
   recurringTasks,
   tasks,
   onUpdateCategories,
-  onUpdateRecurrings
+  onUpdateRecurrings,
+  onDeleteRecurringCascade,
+  onShowUndoToast
 }) => {
   const isFem = theme === 'feminine';
   const [editingRec, setEditingRec] = useState<RecurringTask | null>(null);
@@ -116,7 +121,8 @@ export const RecurringTasksPanel: React.FC<Props> = ({
       const total = dayTasks.length;
       const completed = dayTasks.filter((t) => t.completed).length;
       const rate = total ? completed / total : null;
-      return { date: d, total, completed, rate };
+      const isToday = isSameDay(d, today);
+      return { date: d, total, completed, rate, isToday };
     });
   }, [tasks]);
 
@@ -142,7 +148,30 @@ export const RecurringTasksPanel: React.FC<Props> = ({
   };
 
   const deleteRec = (id: string) => {
-    onUpdateRecurrings(recurringTasks.filter((r) => r.id !== id));
+    const removed = recurringTasks.find((r) => r.id === id);
+    if (!removed) return;
+    const pendingInstances = tasks.filter((t) => t.recurringTaskId === id && !t.completed).length;
+
+    const alsoDelete =
+      pendingInstances > 0
+        ? window.confirm(
+            `Remover também ${pendingInstances} instância(s) pendente(s) dessa rotina?\n\n"OK" = remove recorrente + pendentes.\n"Cancelar" = mantém pendentes no histórico (não gera mais futuras).`
+          )
+        : false;
+
+    if (onDeleteRecurringCascade) {
+      onDeleteRecurringCascade(id, alsoDelete);
+    } else {
+      onUpdateRecurrings(recurringTasks.filter((r) => r.id !== id));
+    }
+
+    // Undo — só restaura a recorrente em si (instâncias não restauramos pra manter simples)
+    if (onShowUndoToast) {
+      onShowUndoToast({
+        message: `"${removed.title}" removida`,
+        onUndo: () => onUpdateRecurrings([removed, ...recurringTasks.filter((r) => r.id !== id)])
+      });
+    }
   };
 
   const togglePause = (rec: RecurringTask) => {
@@ -162,12 +191,42 @@ export const RecurringTasksPanel: React.FC<Props> = ({
   };
 
   const deleteCat = (id: string) => {
+    const removed = categories.find((c) => c.id === id);
+    if (!removed) return;
+    const previousRecurrings = recurringTasks;
     onUpdateCategories(categories.filter((c) => c.id !== id));
     // desliga categoryId em recorrentes afetadas (mas preserva .category string)
     const affected = recurringTasks.map((r) =>
       r.categoryId === id ? { ...r, categoryId: undefined } : r
     );
     onUpdateRecurrings(affected);
+    if (onShowUndoToast) {
+      onShowUndoToast({
+        message: `Categoria "${removed.name}" removida`,
+        onUndo: () => {
+          onUpdateCategories([...categories.filter((c) => c.id !== id), removed]);
+          onUpdateRecurrings(previousRecurrings);
+        }
+      });
+    }
+  };
+
+  const exportJSON = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      categories,
+      recurringTasks
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rotina-foco-total-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const importTemplate = (templateId: string) => {
@@ -257,6 +316,9 @@ export const RecurringTasksPanel: React.FC<Props> = ({
             <button onClick={() => setShowTemplate(true)} className={btnGhost}>
               <Download className="w-3 h-3 inline mr-1" /> Importar template
             </button>
+            <button onClick={exportJSON} className={btnGhost} title="Exportar categorias e recorrentes como JSON">
+              <FileDown className="w-3 h-3 inline mr-1" /> Exportar
+            </button>
             <button onClick={handleToggleNotifications} className={btnGhost}>
               {notifPerm === 'granted' ? (
                 <><Bell className="w-3 h-3 inline mr-1" /> Lembretes ativos</>
@@ -306,8 +368,14 @@ export const RecurringTasksPanel: React.FC<Props> = ({
           {streakDays.map((d, i) => (
             <div
               key={i}
-              title={`${format(d.date, "dd/MM 'EEE'", { locale: ptBR })} — ${d.completed}/${d.total}`}
-              className={`flex-1 min-w-[22px] sm:min-w-[28px] aspect-square rounded-lg sm:rounded-xl ${streakIntensity(d.rate)} flex items-end justify-center pb-1`}
+              title={`${format(d.date, "dd/MM 'EEE'", { locale: ptBR })} — ${d.completed}/${d.total}${d.isToday ? ' (hoje)' : ''}`}
+              className={`flex-1 min-w-[22px] sm:min-w-[28px] aspect-square rounded-lg sm:rounded-xl ${streakIntensity(d.rate)} flex items-end justify-center pb-1 transition-all ${
+                d.isToday
+                  ? isFem
+                    ? 'ring-2 ring-offset-1 ring-rose-600 shadow-lg shadow-rose-300/50'
+                    : 'ring-2 ring-offset-1 ring-offset-zinc-900 ring-blue-500 shadow-lg shadow-blue-500/30'
+                  : ''
+              }`}
             >
               <span
                 className={`text-[7px] sm:text-[9px] font-black ${
@@ -551,11 +619,27 @@ const RecurringEditorModal: React.FC<{
   const [title, setTitle] = useState(rec.title);
   const [categoryId, setCategoryId] = useState(rec.categoryId ?? categories[0]?.id ?? '');
   const [frequency, setFrequency] = useState<Frequency>(rec.frequency);
-  const [dayOfWeek, setDayOfWeek] = useState<number>(rec.dayOfWeek ?? 1);
+  // Unifica legado (dayOfWeek único) em array
+  const initialDays = Array.isArray(rec.daysOfWeek) && rec.daysOfWeek.length > 0
+    ? rec.daysOfWeek
+    : typeof rec.dayOfWeek === 'number'
+      ? [rec.dayOfWeek]
+      : [1];
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>(initialDays);
   const [dayOfMonth, setDayOfMonth] = useState<number>(rec.dayOfMonth ?? 1);
+
+  const toggleDay = (d: number) => {
+    setDaysOfWeek((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)
+    );
+  };
 
   const handleSave = () => {
     if (!title.trim()) return;
+    if (frequency === 'weekly' && daysOfWeek.length === 0) {
+      alert('Selecione pelo menos um dia da semana.');
+      return;
+    }
     const cat = categories.find((c) => c.id === categoryId);
     onSave({
       id: rec.id || crypto.randomUUID(),
@@ -563,7 +647,8 @@ const RecurringEditorModal: React.FC<{
       categoryId: cat?.id,
       category: cat?.name ?? rec.category,
       frequency,
-      dayOfWeek: frequency === 'weekly' ? dayOfWeek : undefined,
+      daysOfWeek: frequency === 'weekly' ? daysOfWeek : undefined,
+      dayOfWeek: undefined, // sempre migra para daysOfWeek
       dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
       active: rec.active ?? true,
       createdAt: rec.createdAt || new Date().toISOString(),
@@ -643,24 +728,43 @@ const RecurringEditorModal: React.FC<{
           </div>
 
           {frequency === 'weekly' && (
-            <div className="grid grid-cols-7 gap-1">
-              {WEEKDAYS.map((d, i) => (
-                <button
-                  key={i}
-                  onClick={() => setDayOfWeek(i)}
-                  className={`p-2 rounded-xl text-[9px] font-black uppercase transition-all ${
-                    dayOfWeek === i
-                      ? isFem
-                        ? 'bg-rose-600 text-white'
-                        : 'bg-blue-600 text-white'
-                      : isFem
-                        ? 'bg-rose-50 text-rose-600'
-                        : 'bg-zinc-800 text-zinc-400'
+            <div>
+              <label
+                className={`block text-[9px] font-black uppercase tracking-widest mb-2 ${
+                  isFem ? 'text-rose-500' : 'text-zinc-500'
+                }`}
+              >
+                Dias da semana (selecione um ou mais)
+              </label>
+              <div className="grid grid-cols-7 gap-1">
+                {WEEKDAYS.map((d, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => toggleDay(i)}
+                    className={`p-2 rounded-xl text-[9px] font-black uppercase transition-all active:scale-95 ${
+                      daysOfWeek.includes(i)
+                        ? isFem
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-blue-600 text-white'
+                        : isFem
+                          ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              {daysOfWeek.length > 1 && (
+                <p
+                  className={`text-[8px] mt-1 uppercase tracking-wider ${
+                    isFem ? 'text-rose-400' : 'text-zinc-600'
                   }`}
                 >
-                  {d}
-                </button>
-              ))}
+                  Aparece {daysOfWeek.length}× por semana.
+                </p>
+              )}
             </div>
           )}
 

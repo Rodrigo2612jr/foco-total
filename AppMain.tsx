@@ -37,6 +37,9 @@ import { DashboardHeader } from './components/DashboardHeader';
 import { WeeklyChart } from './components/WeeklyChart';
 import { CategoryChart } from './components/CategoryChart';
 import { RecurringTasksPanel } from './components/RecurringTasksPanel';
+import { TodaysRoutineBlock } from './components/TodaysRoutineBlock';
+import { UndoToast, UndoToastData } from './components/UndoToast';
+import { GoalEditModal, NoteEditModal, TaskEditModal } from './components/EditModals';
 import { db } from './services/firebase';
 import { catchUpRecurringInstances, migrateLegacyIsDaily, toDateKey } from './services/recurringService';
 import { notifyDailyRoutineSummary } from './services/notifications';
@@ -230,6 +233,20 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [filterCategory, setFilterCategory] = useState<string>('TUDO');
   const [activeFilterTab, setActiveFilterTab] = useState<'HOJE' | 'ONTEM' | 'OUTRO'>('HOJE');
   const [filterStatus, setFilterStatus] = useState<'TODOS' | 'PENDENTES' | 'CONCLUIDOS'>('TODOS');
+
+  // Undo toast
+  const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
+  const showUndo = (data: { message: string; onUndo: () => void }) => {
+    setUndoToast({ id: crypto.randomUUID(), ...data });
+  };
+
+  // Delete recurring com opção de cascade nas instâncias pendentes
+  const handleDeleteRecurringCascade = (recId: string, alsoDeletePending: boolean) => {
+    setRecurringTasks((prev) => prev.filter((r) => r.id !== recId));
+    if (alsoDeletePending) {
+      setTasks((prev) => prev.filter((t) => !(t.recurringTaskId === recId && !t.completed)));
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -429,6 +446,20 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
   const categoryItems = useMemo(() => [...goals, ...tasks], [goals, tasks]);
 
+  // Opções unificadas de categoria: dinâmicas (prioridade) + legadas (fallback sem duplicar).
+  // Usadas nos selects dos formulários e no filtro global.
+  const LEGACY_CATEGORIES = ['Trabalho', 'Pessoal', 'Saúde', 'Estudos', 'Outros'];
+  const allCategoryOptions = useMemo(() => {
+    const dynamicNames = categories.map((c) => c.name);
+    const merged = [...dynamicNames];
+    LEGACY_CATEGORIES.forEach((legacy) => {
+      if (!merged.some((n) => n.toLowerCase() === legacy.toLowerCase())) {
+        merged.push(legacy);
+      }
+    });
+    return merged;
+  }, [categories]);
+
   const navItems = [
     { path: '/metas', label: 'Metas', icon: Target, active: isGoalsPath },
     { path: '/tarefas', label: 'Tarefas', icon: ClipboardList, active: isTasksPath },
@@ -617,11 +648,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                   }`}
                 >
                   <option value="TUDO">Categorias</option>
-                  <option value="Trabalho">Trabalho</option>
-                  <option value="Pessoal">Pessoal</option>
-                  <option value="Saúde">Saúde</option>
-                  <option value="Estudos">Estudos</option>
-                  <option value="Outros">Outros</option>
+                  {allCategoryOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={`flex items-center gap-2 px-3 py-1 rounded-xl flex-1 min-w-[100px] ${isFem ? 'border border-rose-50' : 'border border-zinc-800'}`}>
@@ -653,6 +684,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               tasks={tasks}
               onUpdateCategories={setCategories}
               onUpdateRecurrings={setRecurringTasks}
+              onDeleteRecurringCascade={handleDeleteRecurringCascade}
+              onShowUndoToast={showUndo}
             />
           ) : isChecklistGoalsPath ? (
             <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
@@ -697,6 +730,14 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               </div>
             </section>
           ) : isChecklistTasksPath ? (
+            <>
+            <TodaysRoutineBlock
+              theme={user.theme}
+              filterDate={filterDate}
+              tasks={tasks}
+              categories={categories}
+              onToggle={(id) => setTasks(tasks.map((x) => (x.id === id ? { ...x, completed: !x.completed } : x)))}
+            />
             <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
               <div className="flex justify-between items-center">
                 <div>
@@ -740,8 +781,18 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 )}
               </div>
             </section>
+            </>
           ) : (
             <>
+              {isTasksPath && (
+                <TodaysRoutineBlock
+                  theme={user.theme}
+                  filterDate={filterDate}
+                  tasks={tasks}
+                  categories={categories}
+                  onToggle={(id) => setTasks(tasks.map((x) => (x.id === id ? { ...x, completed: !x.completed } : x)))}
+                />
+              )}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 lg:gap-12">
                 {isGoalsPath && (
                   <section className={`flex flex-col space-y-4 sm:space-y-8 p-4 sm:p-8 lg:p-8 rounded-2xl sm:rounded-[3.5rem] border transition-all ${isFem ? 'bg-white border-rose-100 shadow-2xl shadow-rose-200/20' : 'bg-zinc-900/40 border-zinc-800'}`}>
@@ -807,11 +858,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                             name="category"
                             className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
                           >
-                            <option value="Trabalho">Categoria: Trabalho</option>
-                            <option value="Pessoal">Categoria: Pessoal</option>
-                            <option value="Saúde">Categoria: Saúde</option>
-                            <option value="Estudos">Categoria: Estudos</option>
-                            <option value="Outros">Categoria: Outros</option>
+                            {allCategoryOptions.map((c) => (
+                              <option key={c} value={c}>
+                                Categoria: {c}
+                              </option>
+                            ))}
                           </select>
                           <input
                             type="date"
@@ -913,14 +964,14 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                           <select
                             name="category"
-                            defaultValue="Outros"
+                            defaultValue={allCategoryOptions.includes('Outros') ? 'Outros' : allCategoryOptions[0]}
                             className={`p-4 sm:p-5 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-600'}`}
                           >
-                            <option value="Trabalho">Categoria: Trabalho</option>
-                            <option value="Pessoal">Categoria: Pessoal</option>
-                            <option value="Saúde">Categoria: Saúde</option>
-                            <option value="Estudos">Categoria: Estudos</option>
-                            <option value="Outros">Categoria: Outros</option>
+                            {allCategoryOptions.map((c) => (
+                              <option key={c} value={c}>
+                                Categoria: {c}
+                              </option>
+                            ))}
                           </select>
                           <input
                             type="date"
@@ -1033,227 +1084,64 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
       </main>
 
       {editingGoal && goalDraft && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditingGoal(null)} />
-          <div className={`relative w-full sm:max-w-2xl rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 border mobile-modal-content-sheet sm:!max-h-none sm:!position-static sm:!rounded-[2.5rem] overflow-y-auto ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
-            <div className="pull-indicator sm:hidden" />
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Meta</h3>
-              <button onClick={() => setEditingGoal(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setGoals(goals.map((g) => (g.id === editingGoal.id ? {
-                  ...g,
-                  title: goalDraft.title.trim() || g.title,
-                  date: (goalDraft.date || format(parseISO(g.date), 'yyyy-MM-dd')) + 'T12:00:00',
-                  category: goalDraft.category,
-                  priority: goalDraft.priority,
-                  isDaily: goalDraft.isDaily,
-                  description: goalDraft.description.trim()
-                } : g)));
-                setEditingGoal(null);
-              }}
-              className="space-y-4"
-            >
-              <input
-                value={goalDraft.title}
-                onChange={(e) => setGoalDraft({ ...goalDraft, title: e.target.value })}
-                placeholder="Título da meta"
-                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="date"
-                  value={goalDraft.date}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, date: e.target.value })}
-                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                />
-                <select
-                  value={goalDraft.category}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, category: e.target.value as Category })}
-                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                >
-                  <option value="Trabalho">Trabalho</option>
-                  <option value="Pessoal">Pessoal</option>
-                  <option value="Saúde">Saúde</option>
-                  <option value="Estudos">Estudos</option>
-                  <option value="Outros">Outros</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select
-                  value={goalDraft.priority}
-                  onChange={(e) => setGoalDraft({ ...goalDraft, priority: e.target.value as Priority })}
-                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                >
-                  <option value={Priority.LOW}>Baixa</option>
-                  <option value={Priority.MEDIUM}>Média</option>
-                  <option value={Priority.HIGH}>Alta</option>
-                </select>
-                <label className={`flex items-center justify-center gap-2 px-4 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}>
-                  <input
-                    type="checkbox"
-                    checked={goalDraft.isDaily}
-                    onChange={(e) => setGoalDraft({ ...goalDraft, isDaily: e.target.checked })}
-                    className="accent-rose-500"
-                  />
-                  Todos os dias
-                </label>
-              </div>
-              <textarea
-                value={goalDraft.description}
-                onChange={(e) => setGoalDraft({ ...goalDraft, description: e.target.value })}
-                placeholder="Descrição rápida"
-                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none min-h-[120px] ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
-              />
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingGoal(null)}
-                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-800 text-zinc-300'}`}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-600 text-white shadow-rose-300/60' : 'bg-blue-600 text-white'}`}
-                >
-                  Salvar alterações
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <GoalEditModal
+          theme={user.theme}
+          goal={editingGoal}
+          draft={goalDraft}
+          setDraft={setGoalDraft}
+          categoryOptions={allCategoryOptions}
+          onClose={() => setEditingGoal(null)}
+          onSave={() => {
+            setGoals(goals.map((g) => (g.id === editingGoal.id ? {
+              ...g,
+              title: goalDraft.title.trim() || g.title,
+              date: (goalDraft.date || format(parseISO(g.date), 'yyyy-MM-dd')) + 'T12:00:00',
+              category: goalDraft.category,
+              priority: goalDraft.priority,
+              isDaily: goalDraft.isDaily,
+              description: goalDraft.description.trim()
+            } : g)));
+            setEditingGoal(null);
+          }}
+        />
       )}
 
       {editingTask && taskDraft && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditingTask(null)} />
-          <div className={`relative w-full sm:max-w-2xl rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 border mobile-modal-content-sheet sm:!max-h-none sm:!position-static sm:!rounded-[2.5rem] overflow-y-auto ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
-            <div className="pull-indicator sm:hidden" />
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Tarefa</h3>
-              <button onClick={() => setEditingTask(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setTasks(tasks.map((t) => (t.id === editingTask.id ? {
-                  ...t,
-                  title: taskDraft.title.trim() || t.title,
-                  scheduledDate: (taskDraft.date || format(parseISO(t.scheduledDate), 'yyyy-MM-dd')) + 'T12:00:00',
-                  category: taskDraft.category,
-                  isDaily: taskDraft.isDaily
-                } : t)));
-                setEditingTask(null);
-              }}
-              className="space-y-4"
-            >
-              <input
-                value={taskDraft.title}
-                onChange={(e) => setTaskDraft({ ...taskDraft, title: e.target.value })}
-                placeholder="Título da tarefa"
-                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="date"
-                  value={taskDraft.date}
-                  onChange={(e) => setTaskDraft({ ...taskDraft, date: e.target.value })}
-                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                />
-                <select
-                  value={taskDraft.category}
-                  onChange={(e) => setTaskDraft({ ...taskDraft, category: e.target.value as Category })}
-                  className={`p-4 rounded-[2rem] text-[10px] font-black uppercase outline-none ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}
-                >
-                  <option value="Trabalho">Trabalho</option>
-                  <option value="Pessoal">Pessoal</option>
-                  <option value="Saúde">Saúde</option>
-                  <option value="Estudos">Estudos</option>
-                  <option value="Outros">Outros</option>
-                </select>
-              </div>
-              <label className={`flex items-center justify-center gap-2 px-4 py-3 rounded-[2rem] text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-50/50 text-rose-600' : 'bg-black text-zinc-400 border border-zinc-800'}`}>
-                <input
-                  type="checkbox"
-                  checked={taskDraft.isDaily}
-                  onChange={(e) => setTaskDraft({ ...taskDraft, isDaily: e.target.checked })}
-                  className="accent-rose-500"
-                />
-                Todos os dias
-              </label>
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingTask(null)}
-                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-800 text-zinc-300'}`}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-600 text-white shadow-rose-300/60' : 'bg-blue-600 text-white'}`}
-                >
-                  Salvar alterações
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <TaskEditModal
+          theme={user.theme}
+          task={editingTask}
+          draft={taskDraft}
+          setDraft={setTaskDraft}
+          categoryOptions={allCategoryOptions}
+          onClose={() => setEditingTask(null)}
+          onSave={() => {
+            setTasks(tasks.map((t) => (t.id === editingTask.id ? {
+              ...t,
+              title: taskDraft.title.trim() || t.title,
+              scheduledDate: (taskDraft.date || format(parseISO(t.scheduledDate), 'yyyy-MM-dd')) + 'T12:00:00',
+              category: taskDraft.category,
+              isDaily: taskDraft.isDaily
+            } : t)));
+            setEditingTask(null);
+          }}
+        />
       )}
 
       {editingNoteIndex !== null && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditingNoteIndex(null)} />
-          <div className={`relative w-full sm:max-w-xl rounded-t-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 border mobile-modal-content-sheet sm:!max-h-none sm:!position-static sm:!rounded-[2.5rem] overflow-y-auto ${isFem ? 'bg-white border-rose-100' : 'bg-zinc-900 border-zinc-800'}`}>
-            <div className="pull-indicator sm:hidden" />
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h3 className={`text-xl font-black uppercase ${isFem ? 'text-rose-700' : 'text-white'}`}>Editar Nota</h3>
-              <button onClick={() => setEditingNoteIndex(null)} className={`${isFem ? 'text-rose-300 hover:text-rose-700' : 'text-zinc-600 hover:text-white'}`}>
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (editingNoteIndex === null) return;
-                setNotes(notes.map((n, i) => (i === editingNoteIndex ? editingNoteText.trim() || n : n)));
-                setEditingNoteIndex(null);
-              }}
-              className="space-y-4"
-            >
-              <textarea
-                value={editingNoteText}
-                onChange={(e) => setEditingNoteText(e.target.value)}
-                placeholder="Nota"
-                className={`w-full p-4 rounded-[2rem] text-xs font-bold uppercase outline-none min-h-[160px] ${isFem ? 'bg-rose-50/50 text-rose-900 placeholder:text-rose-200 border border-rose-100 focus:border-rose-300' : 'bg-black border border-zinc-800 text-white'}`}
-              />
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setEditingNoteIndex(null)}
-                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-100 text-rose-700' : 'bg-zinc-800 text-zinc-300'}`}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className={`px-5 py-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.3em] ${isFem ? 'bg-rose-600 text-white shadow-rose-300/60' : 'bg-blue-600 text-white'}`}
-                >
-                  Salvar alterações
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <NoteEditModal
+          theme={user.theme}
+          value={editingNoteText}
+          setValue={setEditingNoteText}
+          onClose={() => setEditingNoteIndex(null)}
+          onSave={() => {
+            if (editingNoteIndex === null) return;
+            setNotes(notes.map((n, i) => (i === editingNoteIndex ? editingNoteText.trim() || n : n)));
+            setEditingNoteIndex(null);
+          }}
+        />
       )}
+
+      <UndoToast theme={user.theme} toast={undoToast} onDismiss={() => setUndoToast(null)} />
     </div>
   );
 };

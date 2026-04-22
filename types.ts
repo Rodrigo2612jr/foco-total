@@ -28,7 +28,8 @@ export interface RecurringTask {
   categoryId?: string;      // link para CategoryDef.id (preferencial)
   category?: string;        // fallback: nome de categoria (compatibilidade)
   frequency: Frequency;
-  dayOfWeek?: number;       // 0..6 — usado quando frequency === 'weekly'
+  dayOfWeek?: number;       // [legado] único dia — 0..6
+  daysOfWeek?: number[];    // múltiplos dias — 0..6 (ex: [1,3,5] = seg/qua/sex)
   dayOfMonth?: number;      // 1..31 — usado quando frequency === 'monthly'
   active: boolean;          // false = pausada (não gera mais instâncias futuras)
   createdAt: string;

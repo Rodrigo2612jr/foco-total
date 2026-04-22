@@ -25,8 +25,13 @@ export const isRecurringDueOnDate = (rec: RecurringTask, date: Date): boolean =>
     case 'daily':
       return true;
 
-    case 'weekly':
+    case 'weekly': {
+      // Múltiplos dias tem prioridade sobre dayOfWeek (legado)
+      if (Array.isArray(rec.daysOfWeek) && rec.daysOfWeek.length > 0) {
+        return rec.daysOfWeek.includes(date.getDay());
+      }
       return typeof rec.dayOfWeek === 'number' && date.getDay() === rec.dayOfWeek;
+    }
 
     case 'monthly': {
       if (typeof rec.dayOfMonth !== 'number') return false;
@@ -215,6 +220,15 @@ export const frequencyLabel = (rec: RecurringTask): string => {
       return 'Todo dia';
     case 'weekly': {
       const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      const shortDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      if (Array.isArray(rec.daysOfWeek) && rec.daysOfWeek.length > 0) {
+        if (rec.daysOfWeek.length === 1) return `Toda ${days[rec.daysOfWeek[0]]}`;
+        return rec.daysOfWeek
+          .slice()
+          .sort((a, b) => a - b)
+          .map((d) => shortDays[d])
+          .join(' • ');
+      }
       return typeof rec.dayOfWeek === 'number' ? `Toda ${days[rec.dayOfWeek]}` : 'Semanal';
     }
     case 'monthly':
