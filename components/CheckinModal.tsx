@@ -49,17 +49,21 @@ export const CheckinModal: React.FC<Props> = ({
   const [showPicker, setShowPicker] = useState(false);
   const [pickedIds, setPickedIds] = useState<Set<string>>(new Set());
 
+  // Data do dia (declarado ANTES dos useMemo que dependem — evita TDZ em prod minified)
+  const today = new Date();
+  const todayStr = format(today, "dd 'de' MMMM", { locale: ptBR });
+
   // Candidatos: avulsas concluídas que ainda NÃO estão marcadas como "de hoje"
   // (ou seja, não têm completedAt ou completedAt é de outro dia).
   const pickerCandidates = useMemo(() => {
-    const t = today;
     return tasks.filter((task) => {
       if (task.recurringTaskId) return false;
       if (!task.completed) return false;
       if (!task.completedAt) return true;
-      return !isSameDay(parseISO(task.completedAt), t);
+      return !isSameDay(parseISO(task.completedAt), today);
     });
-  }, [tasks, today]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]);
 
   const togglePick = (id: string) => {
     setPickedIds((prev) => {
@@ -140,9 +144,6 @@ export const CheckinModal: React.FC<Props> = ({
       }
     }
   };
-
-  const today = new Date();
-  const todayStr = format(today, "dd 'de' MMMM", { locale: ptBR });
 
   // ---------- Dados do dia ----------
   const {
