@@ -9,10 +9,11 @@ export enum Priority {
 export type Category = string;
 
 // Frequência de uma tarefa recorrente.
-// - daily: todo dia
-// - weekly: em um dia específico da semana (0=Dom ... 6=Sáb)
+// - daily: todo dia (pode excluir dias específicos via excludedDaysOfWeek)
+// - weekly: em um/mais dias específicos da semana (0=Dom ... 6=Sáb)
+// - biweekly: a cada 2 semanas, num dia específico (segunda alternada, p.ex.)
 // - monthly: em um dia específico do mês (1..31; se o mês não tiver, cai no último dia)
-export type Frequency = 'daily' | 'weekly' | 'monthly';
+export type Frequency = 'daily' | 'weekly' | 'biweekly' | 'monthly';
 
 export interface CategoryDef {
   id: string;
@@ -31,6 +32,13 @@ export interface RecurringTask {
   dayOfWeek?: number;       // [legado] único dia — 0..6
   daysOfWeek?: number[];    // múltiplos dias — 0..6 (ex: [1,3,5] = seg/qua/sex)
   dayOfMonth?: number;      // 1..31 — usado quando frequency === 'monthly'
+  // Para biweekly: dia da semana (1=seg) + data de referência (a recorrente
+  // toca a cada 14 dias contados a partir da referência). Se não houver
+  // referência, usa a primeira ocorrência do dia da semana após createdAt.
+  referenceDate?: string;   // ISO date — quando o ciclo de 14d começa
+  // Dias da semana onde a recorrente NÃO toca (mesmo se diária ou weekly bate).
+  // Ex: F1 financeira com excludedDaysOfWeek: [0, 6] = não toca dom nem sáb.
+  excludedDaysOfWeek?: number[];
   active: boolean;          // false = pausada (não gera mais instâncias futuras)
   createdAt: string;
   notes?: string;

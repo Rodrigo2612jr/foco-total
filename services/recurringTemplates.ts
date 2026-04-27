@@ -32,38 +32,44 @@ export interface Template {
 
 export const PASCOTO_TEMPLATE: Template = {
   id: 'pascoto-routine',
-  name: 'Rotina Pascoto',
+  name: 'Rotina Pascoto v2',
   description:
-    'Rotina completa baseada na Proposta de Reorganização (6 frentes + rituais): Administrativo/RH, Financeiro, E-commerce, Marketing, Clube, Automação e Rituais diários.',
+    'Operacional diário (sem domingo, sem financeiro no sábado) + sprints estratégicos quinzenais na segunda + degustação de sábado planejada na quarta. Todas as frentes recebem atenção sustentável.',
   categories: [
-    { name: 'Administrativo/RH', color: '#7C3AED' },    // roxo — A1, A2, A3
-    { name: 'Financeiro', color: '#059669' },            // esmeralda — F1, F2, F3, F4
-    { name: 'E-commerce/Site', color: '#2563EB' },       // azul — Frente 3
-    { name: 'Marketing', color: '#DB2777' },             // rosa — Frente 4
-    { name: 'Clube de Fidelidade', color: '#F59E0B' },   // âmbar — Frente 5
-    { name: 'Automação', color: '#0891B2' },             // ciano — Frente 6
-    { name: 'Rituais', color: '#475569' }                // cinza — R1, R2
+    { name: 'Administrativo/RH', color: '#7C3AED' },
+    { name: 'Financeiro', color: '#059669' },
+    { name: 'E-commerce/Site', color: '#2563EB' },
+    { name: 'Marketing', color: '#DB2777' },
+    { name: 'Clube de Fidelidade', color: '#F59E0B' },
+    { name: 'Automação', color: '#0891B2' },
+    { name: 'Rituais', color: '#475569' }
   ],
   recurrings: [
-    // ---------- 🟢 DIÁRIAS ----------
-    { title: 'Check-in matinal — enviar plano do dia no WhatsApp', categoryName: 'Rituais', frequency: 'daily', active: true },
-    { title: 'F1 — Pagar boletos do dia', categoryName: 'Financeiro', frequency: 'daily', active: true },
-    { title: 'F2 — Analisar e-mails do financeiro + lançar impostos (contabilidade)', categoryName: 'Financeiro', frequency: 'daily', active: true },
-    { title: 'Monitorar anúncios do site (ROI)', categoryName: 'Marketing', frequency: 'daily', active: true },
-    { title: 'Monitorar anúncios da loja física', categoryName: 'Marketing', frequency: 'daily', active: true },
-    { title: 'Acompanhar Grupo VIP (conversões e engajamento)', categoryName: 'Marketing', frequency: 'daily', active: true },
-    { title: 'Checar site — pedidos, estoque, funcionamento', categoryName: 'E-commerce/Site', frequency: 'daily', active: true },
+    // ---------- 🟢 DIÁRIAS (não rodam domingo; financeiras também não rodam sábado) ----------
+    { title: 'Check-in matinal — enviar plano do dia no WhatsApp', categoryName: 'Rituais', frequency: 'daily', excludedDaysOfWeek: [0], active: true },
+    { title: 'F1 — Pagar boletos do dia', categoryName: 'Financeiro', frequency: 'daily', excludedDaysOfWeek: [0, 6], active: true },
+    { title: 'F2 — Analisar e-mails do financeiro + lançar impostos (contabilidade)', categoryName: 'Financeiro', frequency: 'daily', excludedDaysOfWeek: [0, 6], active: true },
+    { title: 'Monitorar anúncios do site (ROI)', categoryName: 'Marketing', frequency: 'daily', excludedDaysOfWeek: [0], active: true },
+    { title: 'Monitorar anúncios da loja física', categoryName: 'Marketing', frequency: 'daily', excludedDaysOfWeek: [0], active: true },
+    { title: 'Acompanhar Grupo VIP (conversões e engajamento)', categoryName: 'Marketing', frequency: 'daily', excludedDaysOfWeek: [0], active: true },
+    { title: 'Checar site — pedidos, estoque, funcionamento', categoryName: 'E-commerce/Site', frequency: 'daily', excludedDaysOfWeek: [0], active: true },
+
+    // ---------- 🟣 QUINZENAIS — Sprints Estratégicos (segunda alternada) ----------
+    // referenceDate ancora o ciclo na segunda 27/abril/2026. A cada 14 dias, toca de novo.
+    { title: '🎯 Sprint Marketing — análise + criar anúncios + ideias VIP', categoryName: 'Marketing', frequency: 'biweekly', dayOfWeek: 1, referenceDate: '2026-04-27', active: true },
+    { title: '🎯 Sprint Clube de Fidelidade — análise + ideias engajamento e recompra', categoryName: 'Clube de Fidelidade', frequency: 'biweekly', dayOfWeek: 1, referenceDate: '2026-04-27', active: true },
+    { title: '🎯 Sprint Grupo VIP — calendário de promo + conteúdo da quinzena', categoryName: 'Marketing', frequency: 'biweekly', dayOfWeek: 1, referenceDate: '2026-04-27', active: true },
+    { title: '🎯 Sprint Site — análise + ideias pra escalar vendas', categoryName: 'E-commerce/Site', frequency: 'biweekly', dayOfWeek: 1, referenceDate: '2026-04-27', active: true },
 
     // ---------- 🟡 SEMANAIS ----------
-    // R2 reunião: terça (presencial, alinhamento com equipe)
     { title: 'R2 — Reunião semanal de alinhamento (15-20 min)', categoryName: 'Rituais', frequency: 'weekly', daysOfWeek: [2], active: true },
-    // Promoção: planejar na sexta pra começar a rodar segunda (home office)
+    { title: '🥄 Planejar Degustação de Sábado — escolher produto + negociar fornecedor', categoryName: 'Marketing', frequency: 'weekly', daysOfWeek: [3], active: true },
     { title: 'Criar promoção da próxima semana (encarte)', categoryName: 'Marketing', frequency: 'weekly', daysOfWeek: [5], active: true },
-    // Fechamento semanal: sexta
     { title: 'Análise de performance dos anúncios da semana', categoryName: 'Marketing', frequency: 'weekly', daysOfWeek: [5], active: true },
     { title: 'Revisar métricas de venda do site da semana (M5)', categoryName: 'E-commerce/Site', frequency: 'weekly', daysOfWeek: [5], active: true },
+    { title: '⭐ Degustação na loja', categoryName: 'Marketing', frequency: 'weekly', daysOfWeek: [6], active: true },
 
-    // ---------- 🔵 MENSAIS ----------
+    // ---------- 🔵 MENSAIS (operacionais — sem C1/C2/P4 que vão pra sprints quinzenais) ----------
     { title: 'A3 — Organizar caixinhas da Loja 1 e Loja 2', categoryName: 'Administrativo/RH', frequency: 'monthly', dayOfMonth: 1, active: true },
     { title: 'F4 — Fechar e analisar DRE do mês', categoryName: 'Financeiro', frequency: 'monthly', dayOfMonth: 5, active: true },
     { title: 'A3 — Arquivar notas lançadas e boletos pagos (envelope/pasta)', categoryName: 'Administrativo/RH', frequency: 'monthly', dayOfMonth: 5, active: true },
@@ -72,10 +78,7 @@ export const PASCOTO_TEMPLATE: Template = {
     { title: 'Pagamento de salários', categoryName: 'Financeiro', frequency: 'monthly', dayOfMonth: 5, active: true, notes: 'Ajustar manualmente se quinto dia útil for diferente.' },
     { title: 'F3 — Pagar contas fixas (internet, água, luz)', categoryName: 'Financeiro', frequency: 'monthly', dayOfMonth: 10, active: true },
     { title: 'A1 — Recolher assinaturas dos funcionários (adiantamento)', categoryName: 'Administrativo/RH', frequency: 'monthly', dayOfMonth: 20, active: true },
-    { title: 'Pagamento de adiantamentos', categoryName: 'Financeiro', frequency: 'monthly', dayOfMonth: 20, active: true },
-    { title: 'C1 — Revisar crescimento da base do Clube', categoryName: 'Clube de Fidelidade', frequency: 'monthly', dayOfMonth: 28, active: true },
-    { title: 'C2 — Planejar ações de engajamento/retenção do Clube', categoryName: 'Clube de Fidelidade', frequency: 'monthly', dayOfMonth: 28, active: true },
-    { title: 'P4 — Revisar processos candidatos a automação no próximo mês', categoryName: 'Automação', frequency: 'monthly', dayOfMonth: 28, active: true }
+    { title: 'Pagamento de adiantamentos', categoryName: 'Financeiro', frequency: 'monthly', dayOfMonth: 20, active: true }
   ]
 };
 
@@ -145,6 +148,8 @@ export const applyTemplate = (params: {
       dayOfWeek: tplRec.dayOfWeek,
       daysOfWeek: tplRec.daysOfWeek,
       dayOfMonth: tplRec.dayOfMonth,
+      referenceDate: tplRec.referenceDate,
+      excludedDaysOfWeek: tplRec.excludedDaysOfWeek,
       active: tplRec.active,
       createdAt: new Date().toISOString(),
       notes: tplRec.notes

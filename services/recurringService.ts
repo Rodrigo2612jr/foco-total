@@ -1,4 +1,5 @@
 import {
+  differenceInCalendarDays,
   endOfMonth,
   format,
   isSameDay,
@@ -21,6 +22,11 @@ export const toDateKey = (d: Date): string => format(d, 'yyyy-MM-dd');
 export const isRecurringDueOnDate = (rec: RecurringTask, date: Date): boolean => {
   if (!rec.active) return false;
 
+  // Excluir dias específicos da semana (ex: Financeiro excluindo sáb/dom)
+  if (Array.isArray(rec.excludedDaysOfWeek) && rec.excludedDaysOfWeek.includes(date.getDay())) {
+    return false;
+  }
+
   switch (rec.frequency) {
     case 'daily':
       return true;
@@ -31,6 +37,24 @@ export const isRecurringDueOnDate = (rec: RecurringTask, date: Date): boolean =>
         return rec.daysOfWeek.includes(date.getDay());
       }
       return typeof rec.dayOfWeek === 'number' && date.getDay() === rec.dayOfWeek;
+    }
+
+    case 'biweekly': {
+      // Toca em dia da semana específico, a cada 14 dias.
+      // Pega o dia da semana base (preferência: dayOfWeek; senão usa Date(referenceDate).getDay()).
+      const targetDow =
+        typeof rec.dayOfWeek === 'number'
+          ? rec.dayOfWeek
+          : rec.referenceDate
+            ? parseISO(rec.referenceDate).getDay()
+            : 1; // default segunda
+      if (date.getDay() !== targetDow) return false;
+
+      // Calcula se está numa "semana ativa" (multiplo de 14 desde referenceDate)
+      const ref = rec.referenceDate ? startOfDay(parseISO(rec.referenceDate)) : startOfDay(parseISO(rec.createdAt));
+      const diffDays = differenceInCalendarDays(startOfDay(date), ref);
+      // diffDays % 14 === 0 → toca nesse dia
+      return diffDays >= 0 && diffDays % 14 === 0;
     }
 
     case 'monthly': {
@@ -231,6 +255,12 @@ export const frequencyLabel = (rec: RecurringTask): string => {
       }
       return typeof rec.dayOfWeek === 'number' ? `Toda ${days[rec.dayOfWeek]}` : 'Semanal';
     }
+    case 'biweekly': {
+      const days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+      return typeof rec.dayOfWeek === 'number'
+        ? `Quinzenal — ${days[rec.dayOfWeek]} sim, ${days[rec.dayOfWeek]} não`
+        : 'Quinzenal';
+    }
     case 'monthly':
       return typeof rec.dayOfMonth === 'number'
         ? `Todo dia ${rec.dayOfMonth} do mês`
@@ -241,4 +271,10 @@ export const frequencyLabel = (rec: RecurringTask): string => {
 };
 
 export const frequencyShort = (f: Frequency): string =>
-  f === 'daily' ? 'DIÁRIA' : f === 'weekly' ? 'SEMANAL' : 'MENSAL';
+  f === 'daily'
+    ? 'DIÁRIA'
+    : f === 'weekly'
+      ? 'SEMANAL'
+      : f === 'biweekly'
+        ? 'QUINZENAL'
+        : 'MENSAL';

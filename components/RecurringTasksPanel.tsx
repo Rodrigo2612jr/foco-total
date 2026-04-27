@@ -627,9 +627,17 @@ const RecurringEditorModal: React.FC<{
       : [1];
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>(initialDays);
   const [dayOfMonth, setDayOfMonth] = useState<number>(rec.dayOfMonth ?? 1);
+  const [biweeklyDay, setBiweeklyDay] = useState<number>(rec.dayOfWeek ?? 1);
+  const [excludedDays, setExcludedDays] = useState<number[]>(rec.excludedDaysOfWeek ?? []);
 
   const toggleDay = (d: number) => {
     setDaysOfWeek((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)
+    );
+  };
+
+  const toggleExcluded = (d: number) => {
+    setExcludedDays((prev) =>
       prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)
     );
   };
@@ -648,8 +656,10 @@ const RecurringEditorModal: React.FC<{
       category: cat?.name ?? rec.category,
       frequency,
       daysOfWeek: frequency === 'weekly' ? daysOfWeek : undefined,
-      dayOfWeek: undefined, // sempre migra para daysOfWeek
+      dayOfWeek: frequency === 'biweekly' ? biweeklyDay : undefined,
       dayOfMonth: frequency === 'monthly' ? dayOfMonth : undefined,
+      referenceDate: frequency === 'biweekly' ? (rec.referenceDate ?? new Date().toISOString().slice(0, 10)) : undefined,
+      excludedDaysOfWeek: frequency === 'daily' && excludedDays.length > 0 ? excludedDays : undefined,
       active: rec.active ?? true,
       createdAt: rec.createdAt || new Date().toISOString(),
       notes: rec.notes
@@ -707,12 +717,12 @@ const RecurringEditorModal: React.FC<{
             ))}
           </select>
 
-          <div className="grid grid-cols-3 gap-2">
-            {(['daily', 'weekly', 'monthly'] as Frequency[]).map((f) => (
+          <div className="grid grid-cols-4 gap-2">
+            {(['daily', 'weekly', 'biweekly', 'monthly'] as Frequency[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setFrequency(f)}
-                className={`p-3 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all ${
+                className={`p-2.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.1em] transition-all ${
                   frequency === f
                     ? isFem
                       ? 'bg-rose-600 text-white'
@@ -722,10 +732,82 @@ const RecurringEditorModal: React.FC<{
                       : 'bg-zinc-800 text-zinc-400'
                 }`}
               >
-                {f === 'daily' ? 'Diária' : f === 'weekly' ? 'Semanal' : 'Mensal'}
+                {f === 'daily' ? 'Diária' : f === 'weekly' ? 'Semanal' : f === 'biweekly' ? 'Quinzenal' : 'Mensal'}
               </button>
             ))}
           </div>
+
+          {/* Daily — opção de excluir dias específicos da semana */}
+          {frequency === 'daily' && (
+            <div>
+              <label
+                className={`block text-[9px] font-black uppercase tracking-widest mb-2 ${
+                  isFem ? 'text-rose-500' : 'text-zinc-500'
+                }`}
+              >
+                Não tocar nesses dias (opcional):
+              </label>
+              <div className="grid grid-cols-7 gap-1">
+                {WEEKDAYS.map((d, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => toggleExcluded(i)}
+                    className={`p-2 rounded-xl text-[9px] font-black uppercase transition-all active:scale-95 ${
+                      excludedDays.includes(i)
+                        ? 'bg-red-600 text-white'
+                        : isFem
+                          ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              {excludedDays.length > 0 && (
+                <p className={`text-[8px] mt-1 uppercase tracking-wider ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
+                  Vermelho = dias em que essa tarefa NÃO aparece.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Biweekly — escolher dia da semana */}
+          {frequency === 'biweekly' && (
+            <div>
+              <label
+                className={`block text-[9px] font-black uppercase tracking-widest mb-2 ${
+                  isFem ? 'text-rose-500' : 'text-zinc-500'
+                }`}
+              >
+                Dia da semana (a cada 14 dias):
+              </label>
+              <div className="grid grid-cols-7 gap-1">
+                {WEEKDAYS.map((d, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setBiweeklyDay(i)}
+                    className={`p-2 rounded-xl text-[9px] font-black uppercase transition-all active:scale-95 ${
+                      biweeklyDay === i
+                        ? isFem
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-blue-600 text-white'
+                        : isFem
+                          ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
+                          : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              <p className={`text-[8px] mt-1 uppercase tracking-wider ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
+                Toca toda 2ª {WEEKDAYS[biweeklyDay].toLowerCase()} (uma sim, uma não).
+              </p>
+            </div>
+          )}
 
           {frequency === 'weekly' && (
             <div>
