@@ -46,6 +46,7 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
     return projects
       .filter((p) => {
         if (p.status === 'done') return false;
+        if (p.status === 'backlog') return false; // Ideia ainda não rola — só aparece se aceito ou já iniciado
         const startedToday = p.startDate === todayKey;
         const hasStepDueToday = p.steps.some((s) => s.dueDate === todayKey);
         return startedToday || hasStepDueToday;
@@ -86,7 +87,7 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
     const total = updatedSteps.length;
     const doneCount = updatedSteps.filter((s) => s.done).length;
     let nextStatus = project.status;
-    if (project.status === 'backlog' && doneCount > 0) nextStatus = 'doing';
+    if ((project.status === 'backlog' || project.status === 'accepted') && doneCount > 0) nextStatus = 'doing';
     if (total > 0 && doneCount === total && project.status !== 'done') nextStatus = 'done';
     onUpsertProject({
       ...project,

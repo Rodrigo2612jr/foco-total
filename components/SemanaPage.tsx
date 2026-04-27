@@ -513,7 +513,7 @@ const DayDetailSheet: React.FC<{
                       const total = updated.length;
                       const doneCount = updated.filter((s) => s.done).length;
                       let nextStatus = project.status;
-                      if (project.status === 'backlog' && doneCount > 0) nextStatus = 'doing';
+                      if ((project.status === 'backlog' || project.status === 'accepted') && doneCount > 0) nextStatus = 'doing';
                       if (total > 0 && doneCount === total && project.status !== 'done') nextStatus = 'done';
                       onUpsertProject({
                         ...project,

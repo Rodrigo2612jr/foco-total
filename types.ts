@@ -101,7 +101,7 @@ export interface FrenteProject {
   categoryName: string;
   title: string;
   description?: string;
-  status: 'backlog' | 'doing' | 'paused' | 'done';
+  status: 'backlog' | 'accepted' | 'doing' | 'paused' | 'done';
   blockedReason?: string;        // motivo se status === 'paused'
   steps: FrenteProjectStep[];
   startDate?: string;             // 'yyyy-MM-dd' — quando o user PLANEJA começar (vira NOVO HOJE)

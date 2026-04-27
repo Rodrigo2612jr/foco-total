@@ -30,9 +30,10 @@ interface Props {
 }
 
 const STATUS_META = {
-  doing: { label: 'Em andamento', emoji: '🔄', color: '#2563EB' },
+  backlog: { label: 'Ideia', emoji: '💡', color: '#71717A' },
+  accepted: { label: 'Aceito', emoji: '🤝', color: '#A855F7' },
+  doing: { label: 'Iniciado', emoji: '🚀', color: '#2563EB' },
   paused: { label: 'Bloqueado', emoji: '⏸', color: '#F59E0B' },
-  backlog: { label: 'Backlog', emoji: '📋', color: '#71717A' },
   done: { label: 'Concluído', emoji: '✅', color: '#10B981' }
 } as const;
 
@@ -52,12 +53,17 @@ export const ProjectsTab: React.FC<Props> = ({
 
   const grouped = useMemo(() => {
     const out: { [k in FrenteProject['status']]: FrenteProject[] } = {
+      backlog: [],
+      accepted: [],
       doing: [],
       paused: [],
-      backlog: [],
       done: []
     };
-    projects.forEach((p) => out[p.status].push(p));
+    projects.forEach((p) => {
+      // Defesa: se vier status estranho (legado), trata como backlog
+      const st = (out[p.status] ? p.status : 'backlog') as FrenteProject['status'];
+      out[st].push(p);
+    });
     // Done ordenado por completedAt desc
     out.done.sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
     return out;
@@ -84,7 +90,8 @@ export const ProjectsTab: React.FC<Props> = ({
     ? projects.find((p) => p.id === openProjectId) ?? null
     : null;
 
-  const sectionOrder: FrenteProject['status'][] = ['doing', 'paused', 'backlog', 'done'];
+  // Ordem visual: Iniciado (em ação) > Aceito (próximo) > Bloqueado > Ideia (acervo) > Concluído (rodapé)
+  const sectionOrder: FrenteProject['status'][] = ['doing', 'accepted', 'paused', 'backlog', 'done'];
 
   return (
     <div className="space-y-4">
@@ -424,7 +431,10 @@ const ProjectDetailSheet: React.FC<{
     const total = updated.length;
     const doneCount = updated.filter((s) => s.done).length;
     let nextStatus = project.status;
-    if (project.status === 'backlog' && doneCount > 0) nextStatus = 'doing';
+    // Auto-status: se marcou 1ª etapa, sai de Ideia ou Aceito → vira Iniciado
+    if ((project.status === 'backlog' || project.status === 'accepted') && doneCount > 0) {
+      nextStatus = 'doing';
+    }
     if (total > 0 && doneCount === total && project.status !== 'done') nextStatus = 'done';
     onUpsert({
       ...project,
@@ -520,12 +530,12 @@ const ProjectDetailSheet: React.FC<{
             </button>
           </div>
 
-          {/* Status switcher */}
-          <div className="grid grid-cols-4 gap-1.5 mt-3">
+          {/* Status switcher — 5 status */}
+          <div className="grid grid-cols-5 gap-1 mt-3">
             {(Object.keys(STATUS_META) as Array<keyof typeof STATUS_META>)
               .sort((a, b) => {
-                // ordem: backlog, doing, paused, done
-                const o = { backlog: 0, doing: 1, paused: 2, done: 3 };
+                // ordem: ideia, aceito, iniciado, bloqueado, concluído
+                const o = { backlog: 0, accepted: 1, doing: 2, paused: 3, done: 4 };
                 return o[a] - o[b];
               })
               .map((st) => (

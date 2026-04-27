@@ -47,7 +47,7 @@ export const FrenteBottomSheet: React.FC<Props> = ({
 }) => {
   const isFem = theme === 'feminine';
   const [tab, setTab] = useState<'tasks' | 'ideas' | 'projects'>('tasks');
-  const activeProjects = projects.filter((p) => p.status === 'doing' || p.status === 'paused' || p.status === 'backlog');
+  const activeProjects = projects.filter((p) => p.status !== 'done');
   const [newIdea, setNewIdea] = useState('');
 
   const pendingTasks = tasks.filter((t) => !t.completed).slice(0, 20);

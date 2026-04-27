@@ -84,9 +84,7 @@ export const FrentesPage: React.FC<Props> = ({
       ).length;
 
       const activeProjects = projects.filter(
-        (p) =>
-          p.categoryName.toLowerCase() === cat.name.toLowerCase() &&
-          (p.status === 'doing' || p.status === 'paused' || p.status === 'backlog')
+        (p) => p.categoryName.toLowerCase() === cat.name.toLowerCase() && p.status !== 'done'
       ).length;
 
       return { cat, daysSince, status: statusFor(daysSince), pendingTasks, ideasCount, activeProjects };
