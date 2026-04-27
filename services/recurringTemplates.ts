@@ -46,7 +46,7 @@ export const PASCOTO_TEMPLATE: Template = {
   ],
   recurrings: [
     // ---------- 🟢 DIÁRIAS (não rodam domingo; financeiras também não rodam sábado) ----------
-    { title: 'Check-in matinal — enviar plano do dia no WhatsApp', categoryName: 'Rituais', frequency: 'daily', excludedDaysOfWeek: [0], active: true },
+    // (Check-in matinal removido — você manda o resumo só no fim do dia via /checkin)
     { title: 'F1 — Pagar boletos do dia', categoryName: 'Financeiro', frequency: 'daily', excludedDaysOfWeek: [0, 6], active: true },
     { title: 'F2 — Analisar e-mails do financeiro + lançar impostos (contabilidade)', categoryName: 'Financeiro', frequency: 'daily', excludedDaysOfWeek: [0, 6], active: true },
     { title: 'Monitorar anúncios do site (ROI)', categoryName: 'Marketing', frequency: 'daily', excludedDaysOfWeek: [0], active: true },
