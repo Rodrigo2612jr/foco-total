@@ -1360,6 +1360,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           theme={user.theme}
           tasks={tasks}
           goals={goals}
+          projects={frenteProjects}
           whatsappRecipient={checkinConfig.whatsappRecipient}
           recipientName={checkinConfig.recipientName}
           reminderHour={checkinConfig.reminderHour}

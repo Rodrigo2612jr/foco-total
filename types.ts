@@ -90,6 +90,7 @@ export interface FrenteProjectStep {
   id: string;
   text: string;
   done: boolean;
+  completedAt?: string; // ISO — setado quando done vira true; usado pro check-in saber "o que foi feito hoje"
 }
 
 // Projeto/processo em andamento dentro de uma frente. Ex: "Migração Shopify → Tray"

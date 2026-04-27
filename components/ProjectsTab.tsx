@@ -353,7 +353,16 @@ const ProjectDetailSheet: React.FC<{
   };
 
   const toggleStep = (id: string) => {
-    const updated = steps.map((s) => (s.id === id ? { ...s, done: !s.done } : s));
+    const updated = steps.map((s) => {
+      if (s.id !== id) return s;
+      const next = !s.done;
+      if (next) {
+        return { ...s, done: true, completedAt: new Date().toISOString() };
+      }
+      // Desmarcando — remove completedAt
+      const { completedAt, ...rest } = s;
+      return { ...rest, done: false };
+    });
     setSteps(updated);
     // Auto-status: 1ª etapa done → vira doing; todos done → vira done
     const total = updated.length;
