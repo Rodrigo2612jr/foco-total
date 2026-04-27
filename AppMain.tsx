@@ -40,6 +40,7 @@ import { WeeklyChart } from './components/WeeklyChart';
 import { CategoryChart } from './components/CategoryChart';
 import { RecurringTasksPanel } from './components/RecurringTasksPanel';
 import { TodaysRoutineBlock } from './components/TodaysRoutineBlock';
+import { FocoDoDiaCard, FrenteHealthBar } from './components/FrenteHealthBar';
 import { UndoToast, UndoToastData } from './components/UndoToast';
 import { GoalEditModal, NoteEditModal, TaskEditModal } from './components/EditModals';
 import { CheckinModal } from './components/CheckinModal';
@@ -859,13 +860,27 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           ) : (
             <>
               {isTasksPath && (
-                <TodaysRoutineBlock
-                  theme={user.theme}
-                  filterDate={filterDate}
-                  tasks={tasks}
-                  categories={categories}
-                  onToggle={toggleTaskCompleted}
-                />
+                <>
+                  <FrenteHealthBar
+                    theme={user.theme}
+                    categories={categories}
+                    tasks={tasks}
+                    onPickFrente={(name) => setFilterCategory(name)}
+                  />
+                  <FocoDoDiaCard
+                    theme={user.theme}
+                    categories={categories}
+                    tasks={tasks}
+                    onPickFrente={(name) => setFilterCategory(name)}
+                  />
+                  <TodaysRoutineBlock
+                    theme={user.theme}
+                    filterDate={filterDate}
+                    tasks={tasks}
+                    categories={categories}
+                    onToggle={toggleTaskCompleted}
+                  />
+                </>
               )}
               {/* Uma única seção ativa por vez (/metas OU /tarefas) — layout em largura total */}
               <div className="w-full grid grid-cols-1 gap-4 sm:gap-8 lg:gap-12">
