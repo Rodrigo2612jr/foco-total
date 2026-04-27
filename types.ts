@@ -85,6 +85,28 @@ export interface User {
 // dateKey = 'yyyy-MM-dd'. Valor = array de RecurringTask.id já gerados nesse dia.
 export type RecurringGenerationLog = Record<string, string[]>;
 
+// Etapa de um projeto (sub-tarefa).
+export interface FrenteProjectStep {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+// Projeto/processo em andamento dentro de uma frente. Ex: "Migração Shopify → Tray"
+// dentro da frente "E-commerce/Site".
+export interface FrenteProject {
+  id: string;
+  categoryName: string;
+  title: string;
+  description?: string;
+  status: 'backlog' | 'doing' | 'paused' | 'done';
+  blockedReason?: string;        // motivo se status === 'paused'
+  steps: FrenteProjectStep[];
+  startedAt?: string;             // ISO — quando virou doing
+  completedAt?: string;           // ISO — quando virou done
+  createdAt: string;
+}
+
 // Ideia/anotação livre vinculada a uma frente (categoria).
 // Permite ao usuário rabiscar pensamentos sobre Marketing/Clube/Site
 // sem precisar criar tarefa formal.

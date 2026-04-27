@@ -29,6 +29,7 @@ import {
   CategoryDef,
   CheckinConfig,
   FrenteIdea,
+  FrenteProject,
   Goal,
   Priority,
   RecurringGenerationLog,
@@ -61,7 +62,8 @@ const getEmptyData = () => ({
   recurringTasks: [] as RecurringTask[],
   recurringGenerationLog: {} as RecurringGenerationLog,
   checkinConfig: {} as CheckinConfig,
-  frenteIdeas: [] as FrenteIdea[]
+  frenteIdeas: [] as FrenteIdea[],
+  frenteProjects: [] as FrenteProject[]
 });
 
 const loadUserData = async (username: string) => {
@@ -77,6 +79,7 @@ const loadUserData = async (username: string) => {
     recurringGenerationLog: RecurringGenerationLog;
     checkinConfig: CheckinConfig;
     frenteIdeas: FrenteIdea[];
+    frenteProjects: FrenteProject[];
   }>;
   return {
     goals: Array.isArray(data.goals) ? data.goals : [],
@@ -90,7 +93,8 @@ const loadUserData = async (username: string) => {
         : {},
     checkinConfig:
       data.checkinConfig && typeof data.checkinConfig === 'object' ? data.checkinConfig : {},
-    frenteIdeas: Array.isArray(data.frenteIdeas) ? data.frenteIdeas : []
+    frenteIdeas: Array.isArray(data.frenteIdeas) ? data.frenteIdeas : [],
+    frenteProjects: Array.isArray(data.frenteProjects) ? data.frenteProjects : []
   };
 };
 
@@ -105,6 +109,7 @@ const saveUserData = async (
     recurringGenerationLog: RecurringGenerationLog;
     checkinConfig: CheckinConfig;
     frenteIdeas: FrenteIdea[];
+    frenteProjects: FrenteProject[];
   }
 ) => {
   const ref = doc(db, 'users', username);
@@ -225,6 +230,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [recurringGenerationLog, setRecurringGenerationLog] = useState<RecurringGenerationLog>({});
   const [checkinConfig, setCheckinConfig] = useState<CheckinConfig>({});
   const [frenteIdeas, setFrenteIdeas] = useState<FrenteIdea[]>([]);
+  const [frenteProjects, setFrenteProjects] = useState<FrenteProject[]>([]);
   const [showCheckin, setShowCheckin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [canSave, setCanSave] = useState(false);
@@ -359,6 +365,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setRecurringGenerationLog(updatedLog);
         setCheckinConfig(loaded.checkinConfig ?? {});
         setFrenteIdeas(loaded.frenteIdeas ?? []);
+        setFrenteProjects(loaded.frenteProjects ?? []);
         setCanSave(true);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -388,6 +395,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setRecurringGenerationLog({});
         setCheckinConfig({});
         setFrenteIdeas([]);
+        setFrenteProjects([]);
         setCanSave(false);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -410,14 +418,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         recurringTasks,
         recurringGenerationLog,
         checkinConfig,
-        frenteIdeas
+        frenteIdeas,
+        frenteProjects
       }).catch(() => undefined);
     }, 400);
 
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, checkinConfig, frenteIdeas, user.username, isLoading, canSave]);
+  }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, checkinConfig, frenteIdeas, frenteProjects, user.username, isLoading, canSave]);
 
   const applyFilters = (items: any[], dateKey: string, includeOverdue = false) => {
     const selectedDate = parseISO(filterDate);
@@ -793,6 +802,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               recurringTasks={recurringTasks}
               tasks={tasks}
               ideas={frenteIdeas}
+              projects={frenteProjects}
               onAddIdea={(categoryName, text) => {
                 setFrenteIdeas((prev) => [
                   {
@@ -813,6 +823,20 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 setFrenteIdeas((prev) => prev.filter((i) => i.id !== id));
               }}
               onToggleTask={toggleTaskCompleted}
+              onUpsertProject={(project) => {
+                setFrenteProjects((prev) => {
+                  const idx = prev.findIndex((p) => p.id === project.id);
+                  if (idx >= 0) {
+                    const next = [...prev];
+                    next[idx] = project;
+                    return next;
+                  }
+                  return [project, ...prev];
+                });
+              }}
+              onDeleteProject={(id) => {
+                setFrenteProjects((prev) => prev.filter((p) => p.id !== id));
+              }}
             />
           ) : isRotinaPath ? (
             <RecurringTasksPanel

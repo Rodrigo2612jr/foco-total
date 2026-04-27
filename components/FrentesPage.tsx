@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ChevronRight, Lightbulb, Plus } from 'lucide-react';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 
-import { CategoryDef, FrenteIdea, RecurringTask, Task, ThemeType } from '../types';
+import { CategoryDef, FrenteIdea, FrenteProject, RecurringTask, Task, ThemeType } from '../types';
 import { FrenteBottomSheet } from './FrenteBottomSheet';
 
 interface Props {
@@ -11,10 +11,13 @@ interface Props {
   recurringTasks: RecurringTask[];
   tasks: Task[];
   ideas: FrenteIdea[];
+  projects: FrenteProject[];
   onAddIdea: (categoryName: string, text: string) => void;
   onToggleIdea: (id: string) => void;
   onDeleteIdea: (id: string) => void;
   onToggleTask: (taskId: string) => void;
+  onUpsertProject: (project: FrenteProject) => void;
+  onDeleteProject: (id: string) => void;
 }
 
 interface FrenteSummary {
@@ -23,6 +26,7 @@ interface FrenteSummary {
   status: 'green' | 'yellow' | 'orange' | 'red' | 'idle';
   pendingTasks: number;
   ideasCount: number;
+  activeProjects: number;
 }
 
 const statusFor = (daysSince: number | null) => {
@@ -46,10 +50,13 @@ export const FrentesPage: React.FC<Props> = ({
   recurringTasks,
   tasks,
   ideas,
+  projects,
   onAddIdea,
   onToggleIdea,
   onDeleteIdea,
-  onToggleTask
+  onToggleTask,
+  onUpsertProject,
+  onDeleteProject
 }) => {
   const isFem = theme === 'feminine';
   const [openCategory, setOpenCategory] = useState<string | null>(null);
@@ -76,9 +83,15 @@ export const FrentesPage: React.FC<Props> = ({
         (i) => !i.done && i.categoryName.toLowerCase() === cat.name.toLowerCase()
       ).length;
 
-      return { cat, daysSince, status: statusFor(daysSince), pendingTasks, ideasCount };
+      const activeProjects = projects.filter(
+        (p) =>
+          p.categoryName.toLowerCase() === cat.name.toLowerCase() &&
+          (p.status === 'doing' || p.status === 'paused' || p.status === 'backlog')
+      ).length;
+
+      return { cat, daysSince, status: statusFor(daysSince), pendingTasks, ideasCount, activeProjects };
     });
-  }, [categories, tasks, ideas, today]);
+  }, [categories, tasks, ideas, projects, today]);
 
   const openSummary = openCategory
     ? summaries.find((s) => s.cat.name === openCategory) ?? null
@@ -175,6 +188,15 @@ export const FrentesPage: React.FC<Props> = ({
                     📋 {s.pendingTasks} pend.
                   </span>
                 )}
+                {s.activeProjects > 0 && (
+                  <span
+                    className={`text-[9px] font-black uppercase tracking-widest ${
+                      isFem ? 'text-blue-600' : 'text-blue-400'
+                    }`}
+                  >
+                    🚀 {s.activeProjects} proj.
+                  </span>
+                )}
                 {s.ideasCount > 0 && (
                   <span
                     className={`text-[9px] font-black uppercase tracking-widest ${
@@ -208,10 +230,15 @@ export const FrentesPage: React.FC<Props> = ({
           ideas={ideas.filter(
             (i) => i.categoryName.toLowerCase() === openSummary.cat.name.toLowerCase()
           )}
+          projects={projects.filter(
+            (p) => p.categoryName.toLowerCase() === openSummary.cat.name.toLowerCase()
+          )}
           onAddIdea={(text) => onAddIdea(openSummary.cat.name, text)}
           onToggleIdea={onToggleIdea}
           onDeleteIdea={onDeleteIdea}
           onToggleTask={onToggleTask}
+          onUpsertProject={onUpsertProject}
+          onDeleteProject={onDeleteProject}
           onClose={() => setOpenCategory(null)}
         />
       )}

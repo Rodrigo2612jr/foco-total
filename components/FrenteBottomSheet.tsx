@@ -3,8 +3,9 @@ import { Check, CheckCircle2, Circle, Lightbulb, Plus, Trash2, X } from 'lucide-
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { CategoryDef, FrenteIdea, RecurringTask, Task, ThemeType } from '../types';
+import { CategoryDef, FrenteIdea, FrenteProject, RecurringTask, Task, ThemeType } from '../types';
 import { frequencyLabel, frequencyShort } from '../services/recurringService';
+import { ProjectsTab } from './ProjectsTab';
 
 interface Summary {
   cat: CategoryDef;
@@ -19,10 +20,13 @@ interface Props {
   recurringTasks: RecurringTask[];
   tasks: Task[];
   ideas: FrenteIdea[];
+  projects: FrenteProject[];
   onAddIdea: (text: string) => void;
   onToggleIdea: (id: string) => void;
   onDeleteIdea: (id: string) => void;
   onToggleTask: (taskId: string) => void;
+  onUpsertProject: (project: FrenteProject) => void;
+  onDeleteProject: (id: string) => void;
   onClose: () => void;
 }
 
@@ -32,14 +36,18 @@ export const FrenteBottomSheet: React.FC<Props> = ({
   recurringTasks,
   tasks,
   ideas,
+  projects,
   onAddIdea,
   onToggleIdea,
   onDeleteIdea,
   onToggleTask,
+  onUpsertProject,
+  onDeleteProject,
   onClose
 }) => {
   const isFem = theme === 'feminine';
-  const [tab, setTab] = useState<'tasks' | 'ideas'>('tasks');
+  const [tab, setTab] = useState<'tasks' | 'ideas' | 'projects'>('tasks');
+  const activeProjects = projects.filter((p) => p.status === 'doing' || p.status === 'paused' || p.status === 'backlog');
   const [newIdea, setNewIdea] = useState('');
 
   const pendingTasks = tasks.filter((t) => !t.completed).slice(0, 20);
@@ -97,40 +105,50 @@ export const FrenteBottomSheet: React.FC<Props> = ({
             </button>
           </div>
 
-          {/* TABS */}
+          {/* TABS — 3 abas */}
           <div className={`flex gap-1 p-1 rounded-2xl ${isFem ? 'bg-white' : 'bg-zinc-950'}`}>
             <button
               onClick={() => setTab('tasks')}
-              className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                tab === 'tasks'
-                  ? 'text-white'
-                  : isFem
-                    ? 'text-zinc-500'
-                    : 'text-zinc-500'
+              className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${
+                tab === 'tasks' ? 'text-white' : isFem ? 'text-zinc-500' : 'text-zinc-500'
               }`}
               style={tab === 'tasks' ? { backgroundColor: summary.cat.color } : undefined}
             >
-              📋 Tarefas {pendingTasks.length > 0 && `(${pendingTasks.length})`}
+              📋 Tarefas{pendingTasks.length > 0 ? ` (${pendingTasks.length})` : ''}
+            </button>
+            <button
+              onClick={() => setTab('projects')}
+              className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${
+                tab === 'projects' ? 'text-white' : isFem ? 'text-zinc-500' : 'text-zinc-500'
+              }`}
+              style={tab === 'projects' ? { backgroundColor: summary.cat.color } : undefined}
+            >
+              🚀 Projetos{activeProjects.length > 0 ? ` (${activeProjects.length})` : ''}
             </button>
             <button
               onClick={() => setTab('ideas')}
-              className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                tab === 'ideas'
-                  ? 'text-white'
-                  : isFem
-                    ? 'text-zinc-500'
-                    : 'text-zinc-500'
+              className={`flex-1 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${
+                tab === 'ideas' ? 'text-white' : isFem ? 'text-zinc-500' : 'text-zinc-500'
               }`}
               style={tab === 'ideas' ? { backgroundColor: summary.cat.color } : undefined}
             >
-              💡 Ideias {activeIdeas.length > 0 && `(${activeIdeas.length})`}
+              💡 Ideias{activeIdeas.length > 0 ? ` (${activeIdeas.length})` : ''}
             </button>
           </div>
         </div>
 
         {/* CONTEÚDO scroll */}
         <div className="flex-1 overflow-y-auto min-h-0 px-5 sm:px-7 py-4">
-          {tab === 'tasks' ? (
+          {tab === 'projects' ? (
+            <ProjectsTab
+              theme={theme}
+              categoryName={summary.cat.name}
+              categoryColor={summary.cat.color}
+              projects={projects}
+              onUpsertProject={onUpsertProject}
+              onDeleteProject={onDeleteProject}
+            />
+          ) : tab === 'tasks' ? (
             <div className="space-y-4">
               {/* Recurring tasks da frente */}
               {recurringTasks.length > 0 && (
