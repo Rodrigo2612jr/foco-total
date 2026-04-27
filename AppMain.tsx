@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Circle,
   ClipboardList,
+  Compass,
   Edit3,
   Filter,
   Heart,
@@ -27,6 +28,7 @@ import {
   Category,
   CategoryDef,
   CheckinConfig,
+  FrenteIdea,
   Goal,
   Priority,
   RecurringGenerationLog,
@@ -41,6 +43,7 @@ import { CategoryChart } from './components/CategoryChart';
 import { RecurringTasksPanel } from './components/RecurringTasksPanel';
 import { TodaysRoutineBlock } from './components/TodaysRoutineBlock';
 import { FocoDoDiaCard, FrenteHealthBar } from './components/FrenteHealthBar';
+import { FrentesPage } from './components/FrentesPage';
 import { UndoToast, UndoToastData } from './components/UndoToast';
 import { GoalEditModal, NoteEditModal, TaskEditModal } from './components/EditModals';
 import { CheckinModal } from './components/CheckinModal';
@@ -55,7 +58,8 @@ const getEmptyData = () => ({
   categories: [] as CategoryDef[],
   recurringTasks: [] as RecurringTask[],
   recurringGenerationLog: {} as RecurringGenerationLog,
-  checkinConfig: {} as CheckinConfig
+  checkinConfig: {} as CheckinConfig,
+  frenteIdeas: [] as FrenteIdea[]
 });
 
 const loadUserData = async (username: string) => {
@@ -70,6 +74,7 @@ const loadUserData = async (username: string) => {
     recurringTasks: RecurringTask[];
     recurringGenerationLog: RecurringGenerationLog;
     checkinConfig: CheckinConfig;
+    frenteIdeas: FrenteIdea[];
   }>;
   return {
     goals: Array.isArray(data.goals) ? data.goals : [],
@@ -82,7 +87,8 @@ const loadUserData = async (username: string) => {
         ? data.recurringGenerationLog
         : {},
     checkinConfig:
-      data.checkinConfig && typeof data.checkinConfig === 'object' ? data.checkinConfig : {}
+      data.checkinConfig && typeof data.checkinConfig === 'object' ? data.checkinConfig : {},
+    frenteIdeas: Array.isArray(data.frenteIdeas) ? data.frenteIdeas : []
   };
 };
 
@@ -96,6 +102,7 @@ const saveUserData = async (
     recurringTasks: RecurringTask[];
     recurringGenerationLog: RecurringGenerationLog;
     checkinConfig: CheckinConfig;
+    frenteIdeas: FrenteIdea[];
   }
 ) => {
   const ref = doc(db, 'users', username);
@@ -215,6 +222,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   const [recurringTasks, setRecurringTasks] = useState<RecurringTask[]>([]);
   const [recurringGenerationLog, setRecurringGenerationLog] = useState<RecurringGenerationLog>({});
   const [checkinConfig, setCheckinConfig] = useState<CheckinConfig>({});
+  const [frenteIdeas, setFrenteIdeas] = useState<FrenteIdea[]>([]);
   const [showCheckin, setShowCheckin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [canSave, setCanSave] = useState(false);
@@ -348,6 +356,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setRecurringTasks(migratedRecurring);
         setRecurringGenerationLog(updatedLog);
         setCheckinConfig(loaded.checkinConfig ?? {});
+        setFrenteIdeas(loaded.frenteIdeas ?? []);
         setCanSave(true);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -376,6 +385,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         setRecurringTasks([]);
         setRecurringGenerationLog({});
         setCheckinConfig({});
+        setFrenteIdeas([]);
         setCanSave(false);
         hasLoadedRef.current = true;
         setIsLoading(false);
@@ -397,14 +407,15 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         categories,
         recurringTasks,
         recurringGenerationLog,
-        checkinConfig
+        checkinConfig,
+        frenteIdeas
       }).catch(() => undefined);
     }, 400);
 
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
-  }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, checkinConfig, user.username, isLoading, canSave]);
+  }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, checkinConfig, frenteIdeas, user.username, isLoading, canSave]);
 
   const applyFilters = (items: any[], dateKey: string, includeOverdue = false) => {
     const selectedDate = parseISO(filterDate);
@@ -486,7 +497,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   }, [editingTask]);
 
   const isRotinaPath = location.pathname === '/rotina';
-  const isGoalsPath = !isRotinaPath && (location.pathname === '/' || location.pathname === '/metas');
+  const isFrentesPath = location.pathname === '/frentes';
+  const isGoalsPath = !isRotinaPath && !isFrentesPath && (location.pathname === '/' || location.pathname === '/metas');
   const isTasksPath = location.pathname === '/tarefas';
   const isChecklistGoalsPath = location.pathname === '/checklist-metas';
   const isChecklistTasksPath = location.pathname === '/checklist-tarefas';
@@ -536,11 +548,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   }, [categories]);
 
   const navItems = [
-    { path: '/metas', label: 'Metas', icon: Target, active: isGoalsPath },
     { path: '/tarefas', label: 'Tarefas', icon: ClipboardList, active: isTasksPath },
+    { path: '/frentes', label: 'Frentes', icon: Compass, active: isFrentesPath },
+    { path: '/metas', label: 'Metas', icon: Target, active: isGoalsPath },
     { path: '/rotina', label: 'Rotina', icon: Repeat, active: isRotinaPath },
-    { path: '/checklist-metas', label: 'Check Metas', icon: CheckCircle2, active: isChecklistGoalsPath },
-    { path: '/checklist-tarefas', label: 'Check Tarefas', icon: CheckCircle2, active: isChecklistTasksPath },
+    { path: '/checklist-tarefas', label: 'Checklist', icon: CheckCircle2, active: isChecklistTasksPath },
   ];
 
   const Sidebar = () => (
@@ -623,9 +635,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           </span>
         </div>
         <span className="font-black italic uppercase text-[9px] tracking-widest opacity-60">
-          {isRotinaPath
-            ? 'ROTINA'
-            : isChecklistGoalsPath
+          {isFrentesPath
+            ? 'FRENTES'
+            : isRotinaPath
+              ? 'ROTINA'
+              : isChecklistGoalsPath
               ? 'CHECK METAS'
               : isChecklistTasksPath
                 ? 'CHECK TAREFAS'
@@ -656,24 +670,28 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 sm:gap-8">
               <div>
                 <h2 className={`text-2xl sm:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
-                  {isRotinaPath
-                    ? 'Rotina Recorrente'
-                    : isChecklistGoalsPath
-                      ? 'Checklist de Metas'
-                      : isChecklistTasksPath
-                        ? 'Checklist de Tarefas'
-                        : isTasksPath
-                          ? 'Dashboard de Tarefas'
-                          : 'Dashboard de Metas'}
+                  {isFrentesPath
+                    ? 'Frentes'
+                    : isRotinaPath
+                      ? 'Rotina Recorrente'
+                      : isChecklistGoalsPath
+                        ? 'Checklist de Metas'
+                        : isChecklistTasksPath
+                          ? 'Checklist de Tarefas'
+                          : isTasksPath
+                            ? 'Dashboard de Tarefas'
+                            : 'Dashboard de Metas'}
                 </h2>
                 <p className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] mt-2 sm:mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
-                  {isRotinaPath
-                    ? 'Tarefas fixas • Geradas automaticamente'
-                    : isChecklistView
-                      ? 'Execução • Registros do Dia'
-                      : isTasksPath
-                        ? 'Produtividade • Execução Tática'
-                        : 'Foco • Metas Estratégicas'}
+                  {isFrentesPath
+                    ? '7 frentes • saúde, tarefas e ideias'
+                    : isRotinaPath
+                      ? 'Tarefas fixas • Geradas automaticamente'
+                      : isChecklistView
+                        ? 'Execução • Registros do Dia'
+                        : isTasksPath
+                          ? 'Produtividade • Execução Tática'
+                          : 'Foco • Metas Estratégicas'}
                 </p>
               </div>
             </div>
@@ -747,11 +765,39 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             </div>
           </div>
 
-          {!isChecklistView && !isRotinaPath && (
+          {!isChecklistView && !isRotinaPath && !isFrentesPath && (
             <DashboardHeader {...(isTasksPath ? statsTasks : statsGoals)} theme={user.theme} />
           )}
 
-          {isRotinaPath ? (
+          {isFrentesPath ? (
+            <FrentesPage
+              theme={user.theme}
+              categories={categories}
+              recurringTasks={recurringTasks}
+              tasks={tasks}
+              ideas={frenteIdeas}
+              onAddIdea={(categoryName, text) => {
+                setFrenteIdeas((prev) => [
+                  {
+                    id: crypto.randomUUID(),
+                    categoryName,
+                    text,
+                    createdAt: new Date().toISOString()
+                  },
+                  ...prev
+                ]);
+              }}
+              onToggleIdea={(id) => {
+                setFrenteIdeas((prev) =>
+                  prev.map((i) => (i.id === id ? { ...i, done: !i.done } : i))
+                );
+              }}
+              onDeleteIdea={(id) => {
+                setFrenteIdeas((prev) => prev.filter((i) => i.id !== id));
+              }}
+              onToggleTask={toggleTaskCompleted}
+            />
+          ) : isRotinaPath ? (
             <RecurringTasksPanel
               theme={user.theme}
               categories={categories}

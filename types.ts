@@ -85,6 +85,17 @@ export interface User {
 // dateKey = 'yyyy-MM-dd'. Valor = array de RecurringTask.id já gerados nesse dia.
 export type RecurringGenerationLog = Record<string, string[]>;
 
+// Ideia/anotação livre vinculada a uma frente (categoria).
+// Permite ao usuário rabiscar pensamentos sobre Marketing/Clube/Site
+// sem precisar criar tarefa formal.
+export interface FrenteIdea {
+  id: string;
+  categoryName: string;  // ligação por nome (não quebra se renomear no futuro)
+  text: string;
+  createdAt: string;
+  done?: boolean;        // marcar como "transformada em ação" / arquivada
+}
+
 // Configurações do check-in diário (envio pra chefe via WhatsApp).
 export interface CheckinConfig {
   whatsappRecipient?: string; // telefone com DDI (ex: '+5511988887777')
