@@ -44,6 +44,7 @@ import { RecurringTasksPanel } from './components/RecurringTasksPanel';
 import { TodaysRoutineBlock } from './components/TodaysRoutineBlock';
 import { FocoDoDiaCard, FrenteHealthBar } from './components/FrenteHealthBar';
 import { FrentesPage } from './components/FrentesPage';
+import { SemanaPage } from './components/SemanaPage';
 import { UndoToast, UndoToastData } from './components/UndoToast';
 import { GoalEditModal, NoteEditModal, TaskEditModal } from './components/EditModals';
 import { CheckinModal } from './components/CheckinModal';
@@ -498,7 +499,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
 
   const isRotinaPath = location.pathname === '/rotina';
   const isFrentesPath = location.pathname === '/frentes';
-  const isGoalsPath = !isRotinaPath && !isFrentesPath && (location.pathname === '/' || location.pathname === '/metas');
+  const isSemanaPath = location.pathname === '/semana';
+  const isGoalsPath = !isRotinaPath && !isFrentesPath && !isSemanaPath && (location.pathname === '/' || location.pathname === '/metas');
   const isTasksPath = location.pathname === '/tarefas';
   const isChecklistGoalsPath = location.pathname === '/checklist-metas';
   const isChecklistTasksPath = location.pathname === '/checklist-tarefas';
@@ -548,11 +550,11 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
   }, [categories]);
 
   const navItems = [
-    { path: '/tarefas', label: 'Tarefas', icon: ClipboardList, active: isTasksPath },
+    { path: '/tarefas', label: 'Hoje', icon: ClipboardList, active: isTasksPath },
+    { path: '/semana', label: 'Semana', icon: CalendarIcon, active: isSemanaPath },
     { path: '/frentes', label: 'Frentes', icon: Compass, active: isFrentesPath },
-    { path: '/metas', label: 'Metas', icon: Target, active: isGoalsPath },
     { path: '/rotina', label: 'Rotina', icon: Repeat, active: isRotinaPath },
-    { path: '/checklist-tarefas', label: 'Checklist', icon: CheckCircle2, active: isChecklistTasksPath },
+    { path: '/metas', label: 'Metas', icon: Target, active: isGoalsPath },
   ];
 
   const Sidebar = () => (
@@ -635,11 +637,13 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
           </span>
         </div>
         <span className="font-black italic uppercase text-[9px] tracking-widest opacity-60">
-          {isFrentesPath
-            ? 'FRENTES'
-            : isRotinaPath
-              ? 'ROTINA'
-              : isChecklistGoalsPath
+          {isSemanaPath
+            ? 'SEMANA'
+            : isFrentesPath
+              ? 'FRENTES'
+              : isRotinaPath
+                ? 'ROTINA'
+                : isChecklistGoalsPath
               ? 'CHECK METAS'
               : isChecklistTasksPath
                 ? 'CHECK TAREFAS'
@@ -670,28 +674,32 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 sm:gap-8">
               <div>
                 <h2 className={`text-2xl sm:text-4xl lg:text-5xl font-black italic uppercase tracking-tighter leading-none ${isFem ? 'text-rose-800' : 'text-white'}`}>
-                  {isFrentesPath
-                    ? 'Frentes'
-                    : isRotinaPath
-                      ? 'Rotina Recorrente'
-                      : isChecklistGoalsPath
-                        ? 'Checklist de Metas'
-                        : isChecklistTasksPath
-                          ? 'Checklist de Tarefas'
-                          : isTasksPath
-                            ? 'Dashboard de Tarefas'
-                            : 'Dashboard de Metas'}
+                  {isSemanaPath
+                    ? 'Visão da Semana'
+                    : isFrentesPath
+                      ? 'Frentes'
+                      : isRotinaPath
+                        ? 'Rotina Recorrente'
+                        : isChecklistGoalsPath
+                          ? 'Checklist de Metas'
+                          : isChecklistTasksPath
+                            ? 'Checklist de Tarefas'
+                            : isTasksPath
+                              ? 'Dashboard de Tarefas'
+                              : 'Dashboard de Metas'}
                 </h2>
                 <p className={`text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.5em] mt-2 sm:mt-4 ${isFem ? 'text-rose-400' : 'text-zinc-600'}`}>
-                  {isFrentesPath
-                    ? '7 frentes • saúde, tarefas e ideias'
-                    : isRotinaPath
-                      ? 'Tarefas fixas • Geradas automaticamente'
-                      : isChecklistView
-                        ? 'Execução • Registros do Dia'
-                        : isTasksPath
-                          ? 'Produtividade • Execução Tática'
-                          : 'Foco • Metas Estratégicas'}
+                  {isSemanaPath
+                    ? 'Plano dos próximos 7 dias'
+                    : isFrentesPath
+                      ? '7 frentes • saúde, tarefas e ideias'
+                      : isRotinaPath
+                        ? 'Tarefas fixas • Geradas automaticamente'
+                        : isChecklistView
+                          ? 'Execução • Registros do Dia'
+                          : isTasksPath
+                            ? 'Produtividade • Execução Tática'
+                            : 'Foco • Metas Estratégicas'}
                 </p>
               </div>
             </div>
@@ -765,11 +773,19 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             </div>
           </div>
 
-          {!isChecklistView && !isRotinaPath && !isFrentesPath && (
+          {!isChecklistView && !isRotinaPath && !isFrentesPath && !isSemanaPath && (
             <DashboardHeader {...(isTasksPath ? statsTasks : statsGoals)} theme={user.theme} />
           )}
 
-          {isFrentesPath ? (
+          {isSemanaPath ? (
+            <SemanaPage
+              theme={user.theme}
+              categories={categories}
+              recurringTasks={recurringTasks}
+              tasks={tasks}
+              onToggleTask={toggleTaskCompleted}
+            />
+          ) : isFrentesPath ? (
             <FrentesPage
               theme={user.theme}
               categories={categories}
