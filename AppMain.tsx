@@ -45,6 +45,7 @@ import { TodaysRoutineBlock } from './components/TodaysRoutineBlock';
 import { FocoDoDiaCard, FrenteHealthBar } from './components/FrenteHealthBar';
 import { FrentesPage } from './components/FrentesPage';
 import { SemanaPage } from './components/SemanaPage';
+import { ModoSabadoCard } from './components/ModoSabadoCard';
 import { UndoToast, UndoToastData } from './components/UndoToast';
 import { GoalEditModal, NoteEditModal, TaskEditModal } from './components/EditModals';
 import { CheckinModal } from './components/CheckinModal';
@@ -923,6 +924,8 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
             <>
               {isTasksPath && (
                 <>
+                  {/* Modo Sábado: ativa sozinho sex >= 17h e sáb o dia todo */}
+                  <ModoSabadoCard theme={user.theme} username={user.username} />
                   <FrenteHealthBar
                     theme={user.theme}
                     categories={categories}
