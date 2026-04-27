@@ -578,35 +578,69 @@ const ProjectDetailSheet: React.FC<{
             />
           )}
 
-          {/* Datas do projeto */}
+          {/* Datas do projeto — editáveis com auto-save no onChange */}
           <div className="grid grid-cols-2 gap-2 mt-3">
             <label className={`block ${isFem ? 'text-zinc-600' : 'text-zinc-400'}`}>
               <span className="text-[9px] font-black uppercase tracking-widest">📅 Início</span>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                onBlur={() => persist({ startDate: startDate || undefined })}
-                className={`w-full mt-1 p-2 rounded-lg text-[11px] font-bold outline-none ${
-                  isFem
-                    ? 'bg-rose-50/40 text-zinc-900 border border-rose-200'
-                    : 'bg-black text-zinc-100 border border-zinc-800'
-                }`}
-              />
+              <div className="flex items-center gap-1 mt-1">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStartDate(v);
+                    persist({ startDate: v || undefined });
+                  }}
+                  className={`flex-1 p-2 rounded-lg text-[11px] font-bold outline-none ${
+                    isFem
+                      ? 'bg-rose-50/40 text-zinc-900 border border-rose-200 focus:border-rose-400'
+                      : 'bg-black text-zinc-100 border border-zinc-800 focus:border-zinc-600'
+                  }`}
+                />
+                {startDate && (
+                  <button
+                    onClick={() => {
+                      setStartDate('');
+                      persist({ startDate: undefined });
+                    }}
+                    title="Limpar"
+                    className={`p-1 ${isFem ? 'text-zinc-400 hover:text-red-500' : 'text-zinc-500 hover:text-red-400'}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </label>
             <label className={`block ${isFem ? 'text-zinc-600' : 'text-zinc-400'}`}>
               <span className="text-[9px] font-black uppercase tracking-widest">🎯 Prazo</span>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                onBlur={() => persist({ dueDate: dueDate || undefined })}
-                className={`w-full mt-1 p-2 rounded-lg text-[11px] font-bold outline-none ${
-                  isFem
-                    ? 'bg-rose-50/40 text-zinc-900 border border-rose-200'
-                    : 'bg-black text-zinc-100 border border-zinc-800'
-                }`}
-              />
+              <div className="flex items-center gap-1 mt-1">
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setDueDate(v);
+                    persist({ dueDate: v || undefined });
+                  }}
+                  className={`flex-1 p-2 rounded-lg text-[11px] font-bold outline-none ${
+                    isFem
+                      ? 'bg-rose-50/40 text-zinc-900 border border-rose-200 focus:border-rose-400'
+                      : 'bg-black text-zinc-100 border border-zinc-800 focus:border-zinc-600'
+                  }`}
+                />
+                {dueDate && (
+                  <button
+                    onClick={() => {
+                      setDueDate('');
+                      persist({ dueDate: undefined });
+                    }}
+                    title="Limpar"
+                    className={`p-1 ${isFem ? 'text-zinc-400 hover:text-red-500' : 'text-zinc-500 hover:text-red-400'}`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </label>
           </div>
 
