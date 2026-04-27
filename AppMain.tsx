@@ -794,7 +794,19 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               categories={categories}
               recurringTasks={recurringTasks}
               tasks={tasks}
+              projects={frenteProjects}
               onToggleTask={toggleTaskCompleted}
+              onUpsertProject={(project) => {
+                setFrenteProjects((prev) => {
+                  const idx = prev.findIndex((p) => p.id === project.id);
+                  if (idx >= 0) {
+                    const next = [...prev];
+                    next[idx] = project;
+                    return next;
+                  }
+                  return [project, ...prev];
+                });
+              }}
             />
           ) : isFrentesPath ? (
             <FrentesPage

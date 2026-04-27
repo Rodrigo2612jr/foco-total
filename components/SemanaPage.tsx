@@ -11,7 +11,7 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { CategoryDef, RecurringTask, Task, ThemeType } from '../types';
+import { CategoryDef, FrenteProject, RecurringTask, Task, ThemeType } from '../types';
 import { isRecurringDueOnDate } from '../services/recurringService';
 
 interface Props {
@@ -19,7 +19,18 @@ interface Props {
   categories: CategoryDef[];
   recurringTasks: RecurringTask[];
   tasks: Task[];
+  projects: FrenteProject[];
   onToggleTask: (taskId: string) => void;
+  onUpsertProject: (project: FrenteProject) => void;
+}
+
+interface ProjectStepOnDay {
+  projectId: string;
+  projectTitle: string;
+  categoryColor?: string;
+  stepId: string;
+  stepText: string;
+  done: boolean;
 }
 
 interface DayInfo {
@@ -31,6 +42,8 @@ interface DayInfo {
   recurringTitles: { id: string; title: string; categoryName?: string; categoryColor?: string }[];
   // Tarefas avulsas agendadas pra esse dia
   avulsasTasks: Task[];
+  // Etapas de projetos com dueDate nesse dia
+  projectSteps: ProjectStepOnDay[];
   // Concluído/total contagem
   doneCount: number;
   totalCount: number;
@@ -52,7 +65,9 @@ export const SemanaPage: React.FC<Props> = ({
   categories,
   recurringTasks,
   tasks,
-  onToggleTask
+  projects,
+  onToggleTask,
+  onUpsertProject
 }) => {
   const isFem = theme === 'feminine';
   const today = new Date();
@@ -68,6 +83,7 @@ export const SemanaPage: React.FC<Props> = ({
     return Array.from({ length: 7 }).map((_, i) => {
       const date = startOfDay(addDays(weekStart, i));
       const dow = date.getDay();
+      const dateKey = format(date, 'yyyy-MM-dd');
 
       // Tarefas avulsas (sem recurringTaskId) agendadas pra esse dia
       const avulsasTasks = tasks.filter(
@@ -87,10 +103,34 @@ export const SemanaPage: React.FC<Props> = ({
           };
         });
 
-      // Concluído/total: usa tasks reais (avulsas + instâncias geradas dessa data)
+      // Etapas de projetos com dueDate = esse dia
+      const projectSteps: ProjectStepOnDay[] = [];
+      projects.forEach((p) => {
+        if (p.status === 'done') return;
+        const cat = catByName.get(p.categoryName.toLowerCase());
+        p.steps.forEach((s) => {
+          if (s.dueDate === dateKey) {
+            projectSteps.push({
+              projectId: p.id,
+              projectTitle: p.title,
+              categoryColor: cat?.color,
+              stepId: s.id,
+              stepText: s.text,
+              done: s.done
+            });
+          }
+        });
+      });
+
+      // Concluído/total: usa tasks reais + etapas de projetos
       const dayTasks = tasks.filter((t) => isSameDay(parseISO(t.scheduledDate), date));
-      const totalCount = dayTasks.length + Math.max(0, recurringTitles.length - dayTasks.filter(t => t.recurringTaskId).length);
-      const doneCount = dayTasks.filter((t) => t.completed).length;
+      const totalCount =
+        dayTasks.length +
+        Math.max(0, recurringTitles.length - dayTasks.filter((t) => t.recurringTaskId).length) +
+        projectSteps.length;
+      const doneCount =
+        dayTasks.filter((t) => t.completed).length +
+        projectSteps.filter((ps) => ps.done).length;
 
       return {
         date,
@@ -99,6 +139,7 @@ export const SemanaPage: React.FC<Props> = ({
         theme: DAY_THEME[dow],
         recurringTitles,
         avulsasTasks,
+        projectSteps,
         doneCount,
         totalCount,
         hasOverdueOriginallyHere: dayTasks.some(
@@ -106,7 +147,7 @@ export const SemanaPage: React.FC<Props> = ({
         )
       };
     });
-  }, [weekStart, recurringTasks, tasks, catByName, today]);
+  }, [weekStart, recurringTasks, tasks, projects, catByName, today]);
 
   const selected = selectedDay !== null ? days[selectedDay] : null;
 
@@ -225,12 +266,16 @@ export const SemanaPage: React.FC<Props> = ({
                 />
               </div>
 
-              {/* Preview das primeiras 3 tarefas */}
+              {/* Preview das primeiras tarefas (priorizando projetos) */}
               {!isOff && d.totalCount > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {[
-                    ...d.recurringTitles.slice(0, 3).map((r) => ({ title: r.title, color: r.categoryColor })),
-                    ...d.avulsasTasks.slice(0, 2).map((a) => ({
+                    ...d.projectSteps.slice(0, 2).map((ps) => ({
+                      title: '🚀 ' + ps.stepText,
+                      color: ps.categoryColor
+                    })),
+                    ...d.recurringTitles.slice(0, 2).map((r) => ({ title: r.title, color: r.categoryColor })),
+                    ...d.avulsasTasks.slice(0, 1).map((a) => ({
                       title: a.title,
                       color: catByName.get((a.category ?? '').toLowerCase())?.color
                     }))
@@ -274,7 +319,9 @@ export const SemanaPage: React.FC<Props> = ({
           day={selected}
           tasks={tasks}
           categories={categories}
+          projects={projects}
           onToggleTask={onToggleTask}
+          onUpsertProject={onUpsertProject}
           onClose={() => setSelectedDay(null)}
         />
       )}
@@ -288,9 +335,11 @@ const DayDetailSheet: React.FC<{
   day: DayInfo;
   tasks: Task[];
   categories: CategoryDef[];
+  projects: FrenteProject[];
   onToggleTask: (id: string) => void;
+  onUpsertProject: (project: FrenteProject) => void;
   onClose: () => void;
-}> = ({ theme, day, tasks, categories, onToggleTask, onClose }) => {
+}> = ({ theme, day, tasks, categories, projects, onToggleTask, onUpsertProject, onClose }) => {
   const isFem = theme === 'feminine';
   const dayTasks = tasks.filter((t) => isSameDay(parseISO(t.scheduledDate), day.date));
   const recurringInstances = dayTasks.filter((t) => t.recurringTaskId);
@@ -441,6 +490,71 @@ const DayDetailSheet: React.FC<{
             </div>
           )}
 
+          {/* Etapas de Projetos */}
+          {day.projectSteps.length > 0 && (
+            <div>
+              <p className={`text-[9px] font-black uppercase tracking-widest mb-2 ${isFem ? 'text-blue-700' : 'text-blue-300'}`}>
+                🚀 Projetos ({day.projectSteps.length})
+              </p>
+              <div className="space-y-1.5">
+                {day.projectSteps.map((ps) => (
+                  <button
+                    key={ps.stepId}
+                    onClick={() => {
+                      const project = projects.find((p) => p.id === ps.projectId);
+                      if (!project) return;
+                      const updated = project.steps.map((s) => {
+                        if (s.id !== ps.stepId) return s;
+                        const next = !s.done;
+                        if (next) return { ...s, done: true, completedAt: new Date().toISOString() };
+                        const { completedAt, ...rest } = s;
+                        return { ...rest, done: false };
+                      });
+                      const total = updated.length;
+                      const doneCount = updated.filter((s) => s.done).length;
+                      let nextStatus = project.status;
+                      if (project.status === 'backlog' && doneCount > 0) nextStatus = 'doing';
+                      if (total > 0 && doneCount === total && project.status !== 'done') nextStatus = 'done';
+                      onUpsertProject({
+                        ...project,
+                        steps: updated,
+                        status: nextStatus,
+                        startedAt: nextStatus === 'doing' && !project.startedAt ? new Date().toISOString() : project.startedAt,
+                        completedAt: nextStatus === 'done' ? new Date().toISOString() : project.completedAt
+                      });
+                    }}
+                    className={`w-full p-3 rounded-xl text-left flex items-start gap-2 transition-all active:scale-[0.98] border-l-4 ${
+                      ps.done
+                        ? isFem
+                          ? 'bg-zinc-50 opacity-60'
+                          : 'bg-zinc-950 opacity-50'
+                        : isFem
+                          ? 'bg-white border border-zinc-100 hover:bg-blue-50/30'
+                          : 'bg-zinc-950 border border-zinc-800 hover:bg-zinc-900'
+                    }`}
+                    style={{ borderLeftColor: ps.categoryColor ?? '#71717A' }}
+                  >
+                    <span className="mt-0.5 shrink-0">
+                      {ps.done ? (
+                        <span className="w-4 h-4 inline-block rounded-full bg-blue-600" />
+                      ) : (
+                        <span className={`w-4 h-4 inline-block rounded-full border-2 ${isFem ? 'border-zinc-300' : 'border-zinc-600'}`} />
+                      )}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-xs font-bold ${ps.done ? 'line-through ' + (isFem ? 'text-zinc-500' : 'text-zinc-500') : isFem ? 'text-zinc-900' : 'text-zinc-200'}`}>
+                        {ps.stepText}
+                      </p>
+                      <p className={`text-[9px] uppercase tracking-wider mt-0.5 ${isFem ? 'text-zinc-500' : 'text-zinc-500'}`}>
+                        {ps.projectTitle}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Recorrentes futuras (ainda não geradas) */}
           {projected.length > 0 && (
             <div>
@@ -471,7 +585,7 @@ const DayDetailSheet: React.FC<{
             </div>
           )}
 
-          {dayTasks.length === 0 && projected.length === 0 && (
+          {dayTasks.length === 0 && projected.length === 0 && day.projectSteps.length === 0 && (
             <div className="text-center py-12 opacity-60">
               <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p className="text-xs font-bold uppercase tracking-widest">

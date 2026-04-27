@@ -769,11 +769,18 @@ const ProjectDetailSheet: React.FC<{
               <div className="space-y-1.5">
                 {pendingSteps.map((s) => {
                   const isPraHoje = s.dueDate === todayKey;
-                  const dueLabel = s.dueDate
-                    ? isPraHoje
-                      ? 'Hoje'
-                      : format(parseISO(s.dueDate), "dd/MM")
-                    : '';
+                  const updateStepDate = (v: string) => {
+                    const updated = steps.map((x) => {
+                      if (x.id !== s.id) return x;
+                      if (!v) {
+                        const { dueDate, ...rest } = x;
+                        return rest;
+                      }
+                      return { ...x, dueDate: v };
+                    });
+                    setSteps(updated);
+                    persist({ steps: updated });
+                  };
                   return (
                     <div
                       key={s.id}
@@ -797,61 +804,54 @@ const ProjectDetailSheet: React.FC<{
                         <span className={`flex-1 text-xs font-bold ${isFem ? 'text-zinc-900' : 'text-zinc-200'}`}>
                           {s.text}
                         </span>
-                        {/* Date chip + picker invisível */}
-                        <label
-                          className={`relative shrink-0 cursor-pointer px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
+                      </div>
+
+                      {/* Linha 2: data editável + botão hoje + lixeira */}
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <CalendarIcon className={`w-3 h-3 shrink-0 ${isFem ? 'text-zinc-500' : 'text-zinc-500'}`} />
+                        <input
+                          type="date"
+                          value={s.dueDate ?? ''}
+                          onChange={(e) => updateStepDate(e.target.value)}
+                          className={`px-1.5 py-1 rounded-md text-[10px] font-bold outline-none ${
                             s.dueDate
                               ? isPraHoje
                                 ? isFem
-                                  ? 'bg-rose-600 text-white'
-                                  : 'bg-blue-600 text-white'
+                                  ? 'bg-rose-600 text-white border border-rose-700'
+                                  : 'bg-blue-600 text-white border border-blue-700'
                                 : isFem
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-purple-900/40 text-purple-300'
+                                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                  : 'bg-purple-900/40 text-purple-200 border border-purple-700'
                               : isFem
-                                ? 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
-                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                                ? 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+                                : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
                           }`}
-                        >
-                          📅 {dueLabel || 'Sem data'}
-                          <input
-                            type="date"
-                            value={s.dueDate ?? ''}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              const updated = steps.map((x) =>
-                                x.id === s.id
-                                  ? v
-                                    ? { ...x, dueDate: v }
-                                    : (() => {
-                                        const { dueDate, ...rest } = x;
-                                        return rest;
-                                      })()
-                                  : x
-                              );
-                              setSteps(updated);
-                              persist({ steps: updated });
-                            }}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                        </label>
+                        />
+                        {s.dueDate && (
+                          <button
+                            onClick={() => updateStepDate('')}
+                            title="Remover data"
+                            className={`p-1 ${isFem ? 'text-zinc-400 hover:text-red-500' : 'text-zinc-500 hover:text-red-400'}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
                         <button
                           onClick={() => toggleStepDueToday(s.id)}
-                          title={isPraHoje ? 'Tirar de hoje' : 'Marcar pra hoje'}
+                          disabled={isPraHoje}
                           className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
                             isPraHoje
-                              ? 'opacity-50'
+                              ? 'opacity-40'
                               : isFem
                                 ? 'bg-rose-600 text-white hover:bg-rose-700'
                                 : 'bg-blue-600 text-white hover:bg-blue-700'
                           }`}
-                          disabled={isPraHoje}
                         >
-                          Hoje
+                          📌 Hoje
                         </button>
                         <button
                           onClick={() => removeStep(s.id)}
-                          className={`p-1 shrink-0 ${isFem ? 'text-zinc-300 hover:text-red-500' : 'text-zinc-600 hover:text-red-400'}`}
+                          className={`ml-auto p-1 ${isFem ? 'text-zinc-300 hover:text-red-500' : 'text-zinc-600 hover:text-red-400'}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
