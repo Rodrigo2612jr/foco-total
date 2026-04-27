@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   AlertCircle,
+  Calendar as CalendarIcon,
   Check,
   ChevronDown,
   ChevronUp,
@@ -13,7 +14,7 @@ import {
   Trash2,
   X
 } from 'lucide-react';
-import { differenceInCalendarDays, format, parseISO } from 'date-fns';
+import { differenceInCalendarDays, format, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { FrenteProject, FrenteProjectStep, ThemeType } from '../types';
@@ -329,9 +330,14 @@ const ProjectDetailSheet: React.FC<{
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? '');
   const [blockedReason, setBlockedReason] = useState(project.blockedReason ?? '');
+  const [startDate, setStartDate] = useState(project.startDate ?? '');
+  const [dueDate, setDueDate] = useState(project.dueDate ?? '');
   const [steps, setSteps] = useState<FrenteProjectStep[]>(project.steps);
   const [newStep, setNewStep] = useState('');
+  const [newStepDueToday, setNewStepDueToday] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const todayKey = format(new Date(), 'yyyy-MM-dd');
 
   const persist = (overrides: Partial<FrenteProject> = {}) => {
     const next: FrenteProject = {
@@ -339,6 +345,8 @@ const ProjectDetailSheet: React.FC<{
       title: title.trim() || project.title,
       description: description.trim() || undefined,
       blockedReason: blockedReason.trim() || undefined,
+      startDate: startDate || undefined,
+      dueDate: dueDate || undefined,
       steps,
       ...overrides
     };
@@ -389,9 +397,29 @@ const ProjectDetailSheet: React.FC<{
   const addStep = () => {
     const t = newStep.trim();
     if (!t) return;
-    const updated = [...steps, { id: crypto.randomUUID(), text: t, done: false }];
+    const newOne: FrenteProjectStep = {
+      id: crypto.randomUUID(),
+      text: t,
+      done: false,
+      ...(newStepDueToday ? { dueDate: todayKey } : {})
+    };
+    const updated = [...steps, newOne];
     setSteps(updated);
     setNewStep('');
+    setNewStepDueToday(false);
+    persist({ steps: updated });
+  };
+
+  const toggleStepDueToday = (id: string) => {
+    const updated = steps.map((s) => {
+      if (s.id !== id) return s;
+      if (s.dueDate === todayKey) {
+        const { dueDate, ...rest } = s;
+        return rest;
+      }
+      return { ...s, dueDate: todayKey };
+    });
+    setSteps(updated);
     persist({ steps: updated });
   };
 
@@ -501,6 +529,38 @@ const ProjectDetailSheet: React.FC<{
               }`}
             />
           )}
+
+          {/* Datas do projeto */}
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <label className={`block ${isFem ? 'text-zinc-600' : 'text-zinc-400'}`}>
+              <span className="text-[9px] font-black uppercase tracking-widest">📅 Início</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                onBlur={() => persist({ startDate: startDate || undefined })}
+                className={`w-full mt-1 p-2 rounded-lg text-[11px] font-bold outline-none ${
+                  isFem
+                    ? 'bg-rose-50/40 text-zinc-900 border border-rose-200'
+                    : 'bg-black text-zinc-100 border border-zinc-800'
+                }`}
+              />
+            </label>
+            <label className={`block ${isFem ? 'text-zinc-600' : 'text-zinc-400'}`}>
+              <span className="text-[9px] font-black uppercase tracking-widest">🎯 Prazo</span>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                onBlur={() => persist({ dueDate: dueDate || undefined })}
+                className={`w-full mt-1 p-2 rounded-lg text-[11px] font-bold outline-none ${
+                  isFem
+                    ? 'bg-rose-50/40 text-zinc-900 border border-rose-200'
+                    : 'bg-black text-zinc-100 border border-zinc-800'
+                }`}
+              />
+            </label>
+          </div>
         </div>
 
         {/* Conteúdo scrollável */}
@@ -527,30 +587,55 @@ const ProjectDetailSheet: React.FC<{
                 ⏳ Etapas pendentes ({pendingSteps.length})
               </p>
               <div className="space-y-1.5">
-                {pendingSteps.map((s) => (
-                  <div
-                    key={s.id}
-                    className={`p-2.5 rounded-lg flex items-center gap-2 ${
-                      isFem ? 'bg-white border border-zinc-100' : 'bg-zinc-950 border border-zinc-800'
-                    }`}
-                  >
-                    <button
-                      onClick={() => toggleStep(s.id)}
-                      className={`p-1 ${isFem ? 'text-zinc-400 hover:text-rose-600' : 'text-zinc-600 hover:text-blue-500'}`}
+                {pendingSteps.map((s) => {
+                  const isPraHoje = s.dueDate === todayKey;
+                  return (
+                    <div
+                      key={s.id}
+                      className={`p-2.5 rounded-lg flex items-center gap-2 ${
+                        isPraHoje
+                          ? isFem
+                            ? 'bg-rose-50 border border-rose-200'
+                            : 'bg-blue-950/40 border border-blue-700'
+                          : isFem
+                            ? 'bg-white border border-zinc-100'
+                            : 'bg-zinc-950 border border-zinc-800'
+                      }`}
                     >
-                      <Circle className="w-4 h-4" />
-                    </button>
-                    <span className={`flex-1 text-xs font-bold ${isFem ? 'text-zinc-900' : 'text-zinc-200'}`}>
-                      {s.text}
-                    </span>
-                    <button
-                      onClick={() => removeStep(s.id)}
-                      className={`p-1 ${isFem ? 'text-zinc-300 hover:text-red-500' : 'text-zinc-600 hover:text-red-400'}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                      <button
+                        onClick={() => toggleStep(s.id)}
+                        className={`p-1 ${isFem ? 'text-zinc-400 hover:text-rose-600' : 'text-zinc-600 hover:text-blue-500'}`}
+                      >
+                        <Circle className="w-4 h-4" />
+                      </button>
+                      <span className={`flex-1 text-xs font-bold ${isFem ? 'text-zinc-900' : 'text-zinc-200'}`}>
+                        {s.text}
+                      </span>
+                      {/* Chip "Pra hoje" toggle */}
+                      <button
+                        onClick={() => toggleStepDueToday(s.id)}
+                        title={isPraHoje ? 'Tirar de hoje' : 'Marcar pra hoje'}
+                        className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
+                          isPraHoje
+                            ? isFem
+                              ? 'bg-rose-600 text-white'
+                              : 'bg-blue-600 text-white'
+                            : isFem
+                              ? 'bg-zinc-100 text-zinc-500 hover:bg-rose-100 hover:text-rose-700'
+                              : 'bg-zinc-800 text-zinc-400 hover:bg-blue-900/40 hover:text-blue-300'
+                        }`}
+                      >
+                        {isPraHoje ? '📌 Hoje' : 'Pra hoje?'}
+                      </button>
+                      <button
+                        onClick={() => removeStep(s.id)}
+                        className={`p-1 ${isFem ? 'text-zinc-300 hover:text-red-500' : 'text-zinc-600 hover:text-red-400'}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -592,26 +677,41 @@ const ProjectDetailSheet: React.FC<{
 
           {/* Adicionar etapa */}
           <div
-            className={`p-2 rounded-lg border-2 border-dashed flex gap-2 ${
+            className={`p-2 rounded-lg border-2 border-dashed ${
               isFem ? 'border-zinc-200' : 'border-zinc-700'
             }`}
           >
-            <input
-              value={newStep}
-              onChange={(e) => setNewStep(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addStep()}
-              placeholder="+ Adicionar etapa"
-              className={`flex-1 p-2 bg-transparent text-xs font-bold outline-none ${
-                isFem ? 'text-zinc-900 placeholder:text-zinc-400' : 'text-zinc-100 placeholder:text-zinc-500'
-              }`}
-            />
+            <div className="flex gap-2">
+              <input
+                value={newStep}
+                onChange={(e) => setNewStep(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addStep()}
+                placeholder="+ Adicionar etapa"
+                className={`flex-1 p-2 bg-transparent text-xs font-bold outline-none ${
+                  isFem ? 'text-zinc-900 placeholder:text-zinc-400' : 'text-zinc-100 placeholder:text-zinc-500'
+                }`}
+              />
+              {newStep.trim() && (
+                <button
+                  onClick={addStep}
+                  className="px-3 py-1 rounded-lg text-[10px] font-black uppercase text-white bg-blue-600"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             {newStep.trim() && (
-              <button
-                onClick={addStep}
-                className="px-3 py-1 rounded-lg text-[10px] font-black uppercase text-white bg-blue-600"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </button>
+              <label className={`flex items-center gap-2 mt-1.5 px-2 cursor-pointer ${isFem ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                <input
+                  type="checkbox"
+                  checked={newStepDueToday}
+                  onChange={(e) => setNewStepDueToday(e.target.checked)}
+                  className="accent-blue-600"
+                />
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  📌 Fazer hoje
+                </span>
+              </label>
             )}
           </div>
 

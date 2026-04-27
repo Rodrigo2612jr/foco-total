@@ -148,6 +148,7 @@ export const CheckinModal: React.FC<Props> = ({
   };
 
   // ---------- Projetos ativos com snapshot do dia ----------
+  const todayKey = useMemo(() => format(today, 'yyyy-MM-dd'), [today]);
   const activeProjects = useMemo(() => {
     return projects
       .filter((p) => p.status === 'doing' || p.status === 'paused')
@@ -158,8 +159,25 @@ export const CheckinModal: React.FC<Props> = ({
         const stepsDoneToday = p.steps.filter(
           (s) => s.done && s.completedAt && isSameDay(parseISO(s.completedAt), today)
         );
-        const stepsPending = p.steps.filter((s) => !s.done).slice(0, 3); // top 3 próximas
-        return { p, total, done, pct, stepsDoneToday, stepsPending };
+        // Planejadas pra hoje mas NÃO concluídas (dueDate=hoje && !done)
+        const stepsDueTodayNotDone = p.steps.filter(
+          (s) => !s.done && s.dueDate === todayKey
+        );
+        // Próximas (top 3 pendentes que não estão "pra hoje")
+        const stepsNext = p.steps
+          .filter((s) => !s.done && s.dueDate !== todayKey)
+          .slice(0, 3);
+        const startedToday = p.startDate === todayKey;
+        return {
+          p,
+          total,
+          done,
+          pct,
+          stepsDoneToday,
+          stepsDueTodayNotDone,
+          stepsNext,
+          startedToday
+        };
       })
       .sort((a, b) => {
         // Em andamento antes de bloqueado; entre iguais, mais % primeiro
@@ -168,7 +186,7 @@ export const CheckinModal: React.FC<Props> = ({
         }
         return b.pct - a.pct;
       });
-  }, [projects, today]);
+  }, [projects, today, todayKey]);
 
   // ---------- Dados do dia ----------
   const {
@@ -293,22 +311,29 @@ export const CheckinModal: React.FC<Props> = ({
     if (activeProjects.length > 0) {
       lines.push(`*🚀 Projetos em andamento:*`);
       lines.push('');
-      activeProjects.forEach(({ p, pct, done, total, stepsDoneToday, stepsPending }) => {
-        const statusEmoji = p.status === 'paused' ? '⏸' : '🔄';
-        lines.push(`${statusEmoji} *${p.title}* — ${pct}% (${done}/${total})`);
-        if (p.status === 'paused' && p.blockedReason) {
-          lines.push(`   ⚠️ Bloqueado: ${p.blockedReason}`);
+      activeProjects.forEach(
+        ({ p, pct, done, total, stepsDoneToday, stepsDueTodayNotDone, stepsNext, startedToday }) => {
+          const statusEmoji = p.status === 'paused' ? '⏸' : '🔄';
+          const todayBadge = startedToday ? ' 🆕 INICIA HOJE' : '';
+          lines.push(`${statusEmoji} *${p.title}* — ${pct}% (${done}/${total})${todayBadge}`);
+          if (p.status === 'paused' && p.blockedReason) {
+            lines.push(`   ⚠️ Bloqueado: ${p.blockedReason}`);
+          }
+          if (stepsDoneToday.length > 0) {
+            lines.push(`   ✅ Feitas hoje:`);
+            stepsDoneToday.forEach((s) => lines.push(`   • ${s.text}`));
+          }
+          if (stepsDueTodayNotDone.length > 0) {
+            lines.push(`   ⏳ Pra fechar ainda hoje:`);
+            stepsDueTodayNotDone.forEach((s) => lines.push(`   • ${s.text}`));
+          }
+          if (stepsNext.length > 0 && p.status !== 'paused' && stepsDueTodayNotDone.length === 0) {
+            lines.push(`   📋 Próximas:`);
+            stepsNext.forEach((s) => lines.push(`   • ${s.text}`));
+          }
+          lines.push('');
         }
-        if (stepsDoneToday.length > 0) {
-          lines.push(`   ✅ Hoje:`);
-          stepsDoneToday.forEach((s) => lines.push(`   • ${s.text}`));
-        }
-        if (stepsPending.length > 0 && p.status !== 'paused') {
-          lines.push(`   ⏳ Próximas:`);
-          stepsPending.forEach((s) => lines.push(`   • ${s.text}`));
-        }
-        lines.push('');
-      });
+      );
     }
 
     // --- Metas ---

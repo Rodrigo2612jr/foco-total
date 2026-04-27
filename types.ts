@@ -91,6 +91,7 @@ export interface FrenteProjectStep {
   text: string;
   done: boolean;
   completedAt?: string; // ISO — setado quando done vira true; usado pro check-in saber "o que foi feito hoje"
+  dueDate?: string;     // 'yyyy-MM-dd' — data planejada pra fazer essa etapa (entra no bloco "Projetos pra Hoje")
 }
 
 // Projeto/processo em andamento dentro de uma frente. Ex: "Migração Shopify → Tray"
@@ -103,7 +104,9 @@ export interface FrenteProject {
   status: 'backlog' | 'doing' | 'paused' | 'done';
   blockedReason?: string;        // motivo se status === 'paused'
   steps: FrenteProjectStep[];
-  startedAt?: string;             // ISO — quando virou doing
+  startDate?: string;             // 'yyyy-MM-dd' — quando o user PLANEJA começar (vira NOVO HOJE)
+  dueDate?: string;               // 'yyyy-MM-dd' — deadline opcional do projeto inteiro
+  startedAt?: string;             // ISO — quando virou doing pela 1ª vez
   completedAt?: string;           // ISO — quando virou done
   createdAt: string;
 }

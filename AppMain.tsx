@@ -47,6 +47,7 @@ import { FocoDoDiaCard, FrenteHealthBar } from './components/FrenteHealthBar';
 import { FrentesPage } from './components/FrentesPage';
 import { SemanaPage } from './components/SemanaPage';
 import { ModoSabadoCard } from './components/ModoSabadoCard';
+import { ProjectsTodayBlock } from './components/ProjectsTodayBlock';
 import { UndoToast, UndoToastData } from './components/UndoToast';
 import { GoalEditModal, NoteEditModal, TaskEditModal } from './components/EditModals';
 import { CheckinModal } from './components/CheckinModal';
@@ -961,6 +962,22 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     categories={categories}
                     tasks={tasks}
                     onPickFrente={(name) => setFilterCategory(name)}
+                  />
+                  <ProjectsTodayBlock
+                    theme={user.theme}
+                    projects={frenteProjects}
+                    categories={categories}
+                    onUpsertProject={(project) => {
+                      setFrenteProjects((prev) => {
+                        const idx = prev.findIndex((p) => p.id === project.id);
+                        if (idx >= 0) {
+                          const next = [...prev];
+                          next[idx] = project;
+                          return next;
+                        }
+                        return [project, ...prev];
+                      });
+                    }}
                   />
                   <TodaysRoutineBlock
                     theme={user.theme}
