@@ -15,9 +15,10 @@ interface TodayItem {
   project: FrenteProject;
   categoryColor: string;
   startedToday: boolean;
-  stepsForToday: { id: string; text: string; done: boolean }[];
+  stepsForToday: { id: string; text: string; done: boolean; dueDate?: string; isLate: boolean }[];
   totalSteps: number;
   doneSteps: number;
+  hasLateStep: boolean;
 }
 
 /**
@@ -25,6 +26,7 @@ interface TodayItem {
  * Mostra:
  *   - Projetos cuja startDate é hoje (NOVO HOJE)
  *   - Etapas de qualquer projeto cuja dueDate é hoje
+ *   - Etapas ATRASADAS (dueDate < hoje e ainda não concluídas) — aparecem destacadas em vermelho
  */
 export const ProjectsTodayBlock: React.FC<Props> = ({
   theme,
@@ -48,21 +50,38 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
         if (p.status === 'done') return false;
         if (p.status === 'backlog') return false; // Ideia ainda não rola — só aparece se aceito ou já iniciado
         const startedToday = p.startDate === todayKey;
-        const hasStepDueToday = p.steps.some((s) => s.dueDate === todayKey);
-        return startedToday || hasStepDueToday;
+        const hasStepDueOrLate = p.steps.some(
+          (s) => s.dueDate && (s.dueDate === todayKey || (s.dueDate < todayKey && !s.done))
+        );
+        return startedToday || hasStepDueOrLate;
       })
       .map((p) => {
         const cat = catByName.get(p.categoryName.toLowerCase());
-        const stepsForToday = p.steps.filter((s) => s.dueDate === todayKey);
+        const stepsForToday = p.steps
+          .filter((s) => {
+            if (!s.dueDate) return false;
+            if (s.dueDate === todayKey) return true;            // do dia (done ou não)
+            if (s.dueDate < todayKey && !s.done) return true;   // atrasado em aberto
+            return false;
+          })
+          .map((s) => ({
+            id: s.id,
+            text: s.text,
+            done: s.done,
+            dueDate: s.dueDate,
+            isLate: !!s.dueDate && s.dueDate < todayKey && !s.done
+          }));
         const totalSteps = p.steps.length;
         const doneSteps = p.steps.filter((s) => s.done).length;
+        const hasLateStep = stepsForToday.some((s) => s.isLate);
         return {
           project: p,
           categoryColor: cat?.color ?? '#71717A',
           startedToday: p.startDate === todayKey,
           stepsForToday,
           totalSteps,
-          doneSteps
+          doneSteps,
+          hasLateStep
         };
       });
   }, [projects, todayKey, catByName]);
@@ -186,9 +205,13 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
                         className={`w-full flex items-start gap-2 p-2 rounded-lg text-left transition-all active:scale-[0.98] ${
                           s.done
                             ? 'opacity-50'
-                            : isFem
-                              ? 'bg-white hover:bg-rose-50'
-                              : 'bg-zinc-900 hover:bg-zinc-800'
+                            : s.isLate
+                              ? isFem
+                                ? 'bg-red-50 hover:bg-red-100 border border-red-300'
+                                : 'bg-red-950/40 hover:bg-red-900/40 border border-red-800'
+                              : isFem
+                                ? 'bg-white hover:bg-rose-50'
+                                : 'bg-zinc-900 hover:bg-zinc-800'
                         }`}
                       >
                         {s.done ? (
@@ -199,20 +222,33 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
                           />
                         ) : (
                           <Circle
-                            className={`w-4 h-4 shrink-0 mt-0.5 ${isFem ? 'text-zinc-400' : 'text-zinc-600'}`}
+                            className={`w-4 h-4 shrink-0 mt-0.5 ${
+                              s.isLate
+                                ? 'text-red-500'
+                                : isFem
+                                  ? 'text-zinc-400'
+                                  : 'text-zinc-600'
+                            }`}
                           />
                         )}
-                        <span
-                          className={`text-xs font-bold leading-snug flex-1 ${
-                            s.done
-                              ? 'line-through ' + (isFem ? 'text-zinc-500' : 'text-zinc-500')
-                              : isFem
-                                ? 'text-zinc-900'
-                                : 'text-zinc-200'
-                          }`}
-                        >
-                          {s.text}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <span
+                            className={`text-xs font-bold leading-snug block ${
+                              s.done
+                                ? 'line-through ' + (isFem ? 'text-zinc-500' : 'text-zinc-500')
+                                : isFem
+                                  ? 'text-zinc-900'
+                                  : 'text-zinc-200'
+                            }`}
+                          >
+                            {s.text}
+                          </span>
+                          {s.isLate && s.dueDate && (
+                            <span className="text-[9px] font-black uppercase tracking-widest text-red-500 mt-0.5 block">
+                              ⚠ Atrasado desde {format(parseISO(s.dueDate), 'dd/MM')}
+                            </span>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
