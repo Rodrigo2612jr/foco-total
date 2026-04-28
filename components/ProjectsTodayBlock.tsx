@@ -94,6 +94,14 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
     0
   );
 
+  const completeProject = (project: FrenteProject) => {
+    onUpsertProject({
+      ...project,
+      status: 'done',
+      completedAt: new Date().toISOString()
+    });
+  };
+
   const toggleStep = (project: FrenteProject, stepId: string) => {
     const updatedSteps = project.steps.map((s) => {
       if (s.id !== stepId) return s;
@@ -252,9 +260,21 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
                       </button>
                     ))}
                   </div>
+                ) : item.totalSteps === 0 ? (
+                  <button
+                    onClick={() => completeProject(item.project)}
+                    className={`mt-2 w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-black uppercase tracking-widest border active:scale-[0.98] transition-all ${
+                      isFem
+                        ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                        : 'bg-emerald-950/40 hover:bg-emerald-900/40 text-emerald-400 border-emerald-800'
+                    }`}
+                  >
+                    <Check className="w-4 h-4" strokeWidth={3} />
+                    Concluir
+                  </button>
                 ) : (
                   <p className={`text-[10px] mt-1 italic ${isFem ? 'text-zinc-400' : 'text-zinc-600'}`}>
-                    Sem etapas marcadas pra hoje. Abra o projeto e use o botão "Pra hoje" nas etapas.
+                    Tem {item.totalSteps} etapa{item.totalSteps > 1 ? 's' : ''} no projeto, mas nenhuma com prazo pra hoje. Abra o projeto pra ver.
                   </p>
                 )}
               </div>
