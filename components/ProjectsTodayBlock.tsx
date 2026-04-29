@@ -15,6 +15,7 @@ interface TodayItem {
   project: FrenteProject;
   categoryColor: string;
   startedToday: boolean;
+  isLateProject: boolean;     // projeto com startDate < hoje e ainda não concluído
   stepsForToday: { id: string; text: string; done: boolean; dueDate?: string; isLate: boolean }[];
   totalSteps: number;
   doneSteps: number;
@@ -25,8 +26,11 @@ interface TodayItem {
  * Bloco "Projetos pra Hoje" — fica entre o FocoDoDia e a Rotina de Hoje na tela /tarefas.
  * Mostra:
  *   - Projetos cuja startDate é hoje (NOVO HOJE)
- *   - Etapas de qualquer projeto cuja dueDate é hoje
- *   - Etapas ATRASADAS (dueDate < hoje e ainda não concluídas) — aparecem destacadas em vermelho
+ *   - Projetos ATRASADOS (startDate < hoje, status ≠ done) — destacados em vermelho
+ *   - Etapas com dueDate hoje
+ *   - Etapas ATRASADAS (dueDate < hoje e ainda não concluídas) — destacadas em vermelho
+ *
+ * Regra de ouro: nada que esteja em aberto e devia ter sido feito some daqui.
  */
 export const ProjectsTodayBlock: React.FC<Props> = ({
   theme,
@@ -50,10 +54,11 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
         if (p.status === 'done') return false;
         if (p.status === 'backlog') return false; // Ideia ainda não rola — só aparece se aceito ou já iniciado
         const startedToday = p.startDate === todayKey;
+        const isLateProject = !!p.startDate && p.startDate < todayKey; // já era pra ter começado/feito
         const hasStepDueOrLate = p.steps.some(
           (s) => s.dueDate && (s.dueDate === todayKey || (s.dueDate < todayKey && !s.done))
         );
-        return startedToday || hasStepDueOrLate;
+        return startedToday || isLateProject || hasStepDueOrLate;
       })
       .map((p) => {
         const cat = catByName.get(p.categoryName.toLowerCase());
@@ -74,15 +79,23 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
         const totalSteps = p.steps.length;
         const doneSteps = p.steps.filter((s) => s.done).length;
         const hasLateStep = stepsForToday.some((s) => s.isLate);
+        const isLateProject = !!p.startDate && p.startDate < todayKey;
         return {
           project: p,
           categoryColor: cat?.color ?? '#71717A',
           startedToday: p.startDate === todayKey,
+          isLateProject,
           stepsForToday,
           totalSteps,
           doneSteps,
           hasLateStep
         };
+      })
+      // Atrasados primeiro (priorizam visualmente), depois os do dia
+      .sort((a, b) => {
+        if (a.isLateProject && !b.isLateProject) return -1;
+        if (!a.isLateProject && b.isLateProject) return 1;
+        return 0;
       });
   }, [projects, todayKey, catByName]);
 
@@ -180,9 +193,15 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
               <div
                 key={item.project.id}
                 className={`p-3 rounded-xl border-l-4 ${
-                  isFem ? 'bg-rose-50/30' : 'bg-zinc-950'
+                  item.isLateProject
+                    ? isFem
+                      ? 'bg-red-50 border border-red-300'
+                      : 'bg-red-950/40 border border-red-800'
+                    : isFem
+                      ? 'bg-rose-50/30'
+                      : 'bg-zinc-950'
                 }`}
-                style={{ borderLeftColor: item.categoryColor }}
+                style={{ borderLeftColor: item.isLateProject ? '#EF4444' : item.categoryColor }}
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="min-w-0">
@@ -195,10 +214,12 @@ export const ProjectsTodayBlock: React.FC<Props> = ({
                     </p>
                     <p
                       className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${
-                        isFem ? 'text-zinc-500' : 'text-zinc-500'
+                        item.isLateProject ? 'text-red-500' : isFem ? 'text-zinc-500' : 'text-zinc-500'
                       }`}
                     >
-                      {item.startedToday && '🆕 INICIA HOJE · '}
+                      {item.isLateProject && item.project.startDate &&
+                        `⚠ ATRASADO DESDE ${format(parseISO(item.project.startDate), 'dd/MM')} · `}
+                      {item.startedToday && !item.isLateProject && '🆕 INICIA HOJE · '}
                       {item.project.categoryName} · {pct}% ({item.doneSteps}/{item.totalSteps})
                     </p>
                   </div>
