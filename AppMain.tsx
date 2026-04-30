@@ -421,13 +421,38 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
         checkinConfig,
         frenteIdeas,
         frenteProjects
-      }).catch(() => undefined);
+      }).catch((err) => console.error('[foco-total] auto-save falhou:', err));
     }, 400);
 
     return () => {
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     };
   }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, checkinConfig, frenteIdeas, frenteProjects, user.username, isLoading, canSave]);
+
+  // Atualiza um projeto e salva IMEDIATO no Firestore (sem esperar o debounce de 400ms).
+  // Usado nas ações críticas como marcar step done, concluir projeto pelo card etc —
+  // garante que mesmo se o user fechar o app rápido, a alteração não se perde.
+  const upsertFrenteProject = (project: FrenteProject) => {
+    setFrenteProjects((prev) => {
+      const idx = prev.findIndex((p) => p.id === project.id);
+      const next = idx >= 0 ? prev.map((p, i) => (i === idx ? project : p)) : [project, ...prev];
+      // Save imediato — não espera o useEffect debouncer
+      if (hasLoadedRef.current && !isLoading && canSave) {
+        saveUserData(user.username, {
+          goals,
+          tasks,
+          notes,
+          categories,
+          recurringTasks,
+          recurringGenerationLog,
+          checkinConfig,
+          frenteIdeas,
+          frenteProjects: next
+        }).catch((err) => console.error('[foco-total] upsertFrenteProject falhou:', err));
+      }
+      return next;
+    });
+  };
 
   const applyFilters = (items: any[], dateKey: string, includeOverdue = false) => {
     const selectedDate = parseISO(filterDate);
@@ -796,17 +821,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
               tasks={tasks}
               projects={frenteProjects}
               onToggleTask={toggleTaskCompleted}
-              onUpsertProject={(project) => {
-                setFrenteProjects((prev) => {
-                  const idx = prev.findIndex((p) => p.id === project.id);
-                  if (idx >= 0) {
-                    const next = [...prev];
-                    next[idx] = project;
-                    return next;
-                  }
-                  return [project, ...prev];
-                });
-              }}
+              onUpsertProject={upsertFrenteProject}
             />
           ) : isFrentesPath ? (
             <FrentesPage
@@ -836,17 +851,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                 setFrenteIdeas((prev) => prev.filter((i) => i.id !== id));
               }}
               onToggleTask={toggleTaskCompleted}
-              onUpsertProject={(project) => {
-                setFrenteProjects((prev) => {
-                  const idx = prev.findIndex((p) => p.id === project.id);
-                  if (idx >= 0) {
-                    const next = [...prev];
-                    next[idx] = project;
-                    return next;
-                  }
-                  return [project, ...prev];
-                });
-              }}
+              onUpsertProject={upsertFrenteProject}
               onDeleteProject={(id) => {
                 setFrenteProjects((prev) => prev.filter((p) => p.id !== id));
               }}
@@ -979,17 +984,7 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
                     theme={user.theme}
                     projects={frenteProjects}
                     categories={categories}
-                    onUpsertProject={(project) => {
-                      setFrenteProjects((prev) => {
-                        const idx = prev.findIndex((p) => p.id === project.id);
-                        if (idx >= 0) {
-                          const next = [...prev];
-                          next[idx] = project;
-                          return next;
-                        }
-                        return [project, ...prev];
-                      });
-                    }}
+                    onUpsertProject={upsertFrenteProject}
                   />
                   <TodaysRoutineBlock
                     theme={user.theme}
