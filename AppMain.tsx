@@ -429,26 +429,22 @@ const AppContent: React.FC<{ user: User; onLogout: () => void }> = ({ user, onLo
     };
   }, [goals, tasks, notes, categories, recurringTasks, recurringGenerationLog, checkinConfig, frenteIdeas, frenteProjects, user.username, isLoading, canSave]);
 
-  // Atualiza um projeto e salva IMEDIATO no Firestore (sem esperar o debounce de 400ms).
-  // Usado nas ações críticas como marcar step done, concluir projeto pelo card etc —
-  // garante que mesmo se o user fechar o app rápido, a alteração não se perde.
+  // Atualiza um projeto e salva IMEDIATO no Firestore (sem esperar o debounce de 400ms,
+  // sem usar closure de outros campos que podem estar defasados).
+  // Salva APENAS o campo `frenteProjects` com { merge: true } — não toca em goals/tasks/etc.
   const upsertFrenteProject = (project: FrenteProject) => {
     setFrenteProjects((prev) => {
       const idx = prev.findIndex((p) => p.id === project.id);
       const next = idx >= 0 ? prev.map((p, i) => (i === idx ? project : p)) : [project, ...prev];
-      // Save imediato — não espera o useEffect debouncer
       if (hasLoadedRef.current && !isLoading && canSave) {
-        saveUserData(user.username, {
-          goals,
-          tasks,
-          notes,
-          categories,
-          recurringTasks,
-          recurringGenerationLog,
-          checkinConfig,
-          frenteIdeas,
-          frenteProjects: next
-        }).catch((err) => console.error('[foco-total] upsertFrenteProject falhou:', err));
+        const ref = doc(db, 'users', user.username);
+        setDoc(ref, { frenteProjects: next }, { merge: true })
+          .then(() => console.log('[foco-total] ✓ projeto salvo:', project.title, '(steps done:',
+            project.steps?.filter((s) => s.done).length ?? 0, '/',
+            project.steps?.length ?? 0, ', status:', project.status, ')'))
+          .catch((err) => console.error('[foco-total] ✗ FALHA ao salvar projeto:', err));
+      } else {
+        console.warn('[foco-total] ⚠ save bloqueado:', { hasLoaded: hasLoadedRef.current, isLoading, canSave });
       }
       return next;
     });
